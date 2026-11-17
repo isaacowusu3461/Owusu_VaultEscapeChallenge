@@ -1,0 +1,18 @@
+
+# macOS files
+.DS_Store
+
+# VS Code local settings
+.vscode/
+
+# Local environment files
+.env
+.env.*
+
+# Local user data and private session files
+data/*
+!data/.gitkeep
+
+# Temporary files
+*.log
+*.tmp
