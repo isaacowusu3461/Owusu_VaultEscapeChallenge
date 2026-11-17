@@ -67,7 +67,8 @@ main {
 .action-button,
 .form-container button,
 .logout-button,
-.puzzle-form button {
+.puzzle-form button,
+.hint-button {
     display: inline-block;
     padding: 12px 20px;
     background-color: #303846;
@@ -83,7 +84,8 @@ main {
 .actions a:hover,
 .action-button:hover,
 .form-container button:hover,
-.puzzle-form button:hover {
+.puzzle-form button:hover,
+.hint-button:hover {
     background-color: #49566a;
 }
 
@@ -279,6 +281,51 @@ main {
 
 .completion-box .action-button {
     margin-top: 15px;
+}
+
+/* Hint system styling. */
+
+.hint-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.hint-section h3 {
+    margin-top: 0;
+}
+
+.hint-button {
+    background-color: #66532f;
+}
+
+.hint-button:hover {
+    background-color: #7b653b;
+}
+
+.hint-box {
+    padding: 15px;
+    background-color: #fff8e7;
+    border: 1px solid #c9ad6b;
+    border-radius: 4px;
+}
+
+.hint-box p {
+    margin-bottom: 0;
+}
+
+.game-stats {
+    margin-top: 25px;
+    padding: 15px;
+    background-color: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.game-stats p {
+    margin: 8px 0;
 }
 
 footer {

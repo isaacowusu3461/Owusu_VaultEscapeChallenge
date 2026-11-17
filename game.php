@@ -1,7 +1,7 @@
 
 <?php
 // Main game page.
-// Players must solve each room before moving forward.
+// Players solve each room and can request one paid hint per room.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/game_functions.php';
@@ -15,7 +15,7 @@ $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = (string) ($_POST['csrf_token'] ?? '');
-    $answer = trim((string) ($_POST['answer'] ?? ''));
+    $action = (string) ($_POST['action'] ?? '');
 
     if (!validCsrfToken($token)) {
         $message = 'The form has expired. Please try again.';
@@ -23,31 +23,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($_SESSION['game_completed']) {
         $message = 'You have already completed the game.';
         $messageType = 'success';
-    } elseif ($answer === '') {
-        $message = 'Please enter an answer before submitting.';
-        $messageType = 'error';
-    } elseif (strlen($answer) > 100) {
-        $message = 'Your answer is too long.';
-        $messageType = 'error';
     } else {
         $currentRoom = (int) $_SESSION['room'];
         $roomData = getRoom($currentRoom);
 
-        if ($roomData !== null) {
-            if (isCorrectAnswer($answer, $roomData['answer'])) {
+        if ($roomData === null) {
+            http_response_code(500);
+            exit('The current room could not be loaded.');
+        }
+
+        if ($action === 'hint') {
+            $hintUnlocked = requestHint($currentRoom);
+
+            if ($hintUnlocked) {
+                header('Location: game.php?hint=unlocked');
+            } else {
+                header('Location: game.php?hint=already');
+            }
+
+            exit;
+        } elseif ($action === 'answer') {
+            $answer = trim((string) ($_POST['answer'] ?? ''));
+
+            if ($answer === '') {
+                $message = 'Please enter an answer before submitting.';
+                $messageType = 'error';
+            } elseif (strlen($answer) > 100) {
+                $message = 'Your answer is too long.';
+                $messageType = 'error';
+            } elseif (isCorrectAnswer($answer, $roomData['answer'])) {
                 completeRoom($currentRoom);
 
                 if ($_SESSION['game_completed']) {
                     header('Location: game.php?finished=1');
-                    exit;
+                } else {
+                    header('Location: game.php?unlocked=1');
                 }
 
-                header('Location: game.php?unlocked=1');
                 exit;
-            }
+            } else {
+                recordWrongAnswer($currentRoom);
 
-            recordWrongAnswer($currentRoom);
-            $message = 'That answer is incorrect. You lost 50 points. Try again.';
+                $message = 'That answer is incorrect. You lost 50 points. Try again.';
+                $messageType = 'error';
+            }
+        } else {
+            $message = 'Invalid game action.';
             $messageType = 'error';
         }
     }
@@ -63,19 +84,29 @@ if (!$completed && $roomData === null) {
     exit('The current room could not be loaded.');
 }
 
+// Show messages after redirects.
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['unlocked']) && !$completed) {
         $message = 'Correct answer! The door unlocked. Welcome to the next room.';
         $messageType = 'success';
-    }
-
-    if (isset($_GET['finished']) && $completed) {
+    } elseif (isset($_GET['finished']) && $completed) {
         $message = 'Congratulations! You escaped the vault.';
+        $messageType = 'success';
+    } elseif (isset($_GET['hint']) && !$completed) {
+        if ($_GET['hint'] === 'unlocked') {
+            $message = 'Hint unlocked. 100 points were deducted.';
+        } else {
+            $message = 'You have already unlocked this hint. No additional points were deducted.';
+        }
+
         $messageType = 'success';
     }
 }
 
 $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
+$hintUsed = !$completed && hasUsedHint($currentRoom);
+$totalWrongAttempts = getTotalWrongAttempts();
+$totalHintsUsed = getTotalHintsUsed();
 ?>
 
 <!DOCTYPE html>
@@ -104,7 +135,7 @@ $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
             <?php if ($message !== ''): ?>
                 <div
                     class="<?= $messageType === 'success' ? 'success-message' : 'error-message' ?>"
-                    role="status"
+                    role="<?= $messageType === 'error' ? 'alert' : 'status' ?>"
                 >
                     <?= escapeHtml($message) ?>
                 </div>
@@ -126,7 +157,13 @@ $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
                     </p>
 
                     <p>
-                        Your escape has been recorded for this session.
+                        <strong>Total Wrong Answers:</strong>
+                        <?= $totalWrongAttempts ?>
+                    </p>
+
+                    <p>
+                        <strong>Total Hints Used:</strong>
+                        <?= $totalHintsUsed ?>
                     </p>
 
                     <a href="dashboard.php" class="action-button">
@@ -151,7 +188,6 @@ $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
 
                 <div class="puzzle-box">
                     <h3>Puzzle <?= $currentRoom ?></h3>
-
                     <p><?= escapeHtml($roomData['question']) ?></p>
                 </div>
 
@@ -161,6 +197,8 @@ $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
                         name="csrf_token"
                         value="<?= escapeHtml(getCsrfToken()) ?>"
                     >
+
+                    <input type="hidden" name="action" value="answer">
 
                     <label for="answer">Your Answer</label>
 
@@ -177,13 +215,65 @@ $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
                     <button type="submit">Unlock Door</button>
                 </form>
 
-                <p class="attempt-count">
-                    Wrong attempts in this room:
-                    <?= (int) $wrongAttempts ?>
-                </p>
+                <div class="hint-section">
+                    <h3>Need Help?</h3>
+
+                    <?php if ($hintUsed): ?>
+
+                        <div class="hint-box">
+                            <strong>Your Hint:</strong>
+                            <p><?= escapeHtml($roomData['hint']) ?></p>
+                        </div>
+
+                        <p class="game-note">
+                            This hint has already been unlocked.
+                            You will not be charged again.
+                        </p>
+
+                    <?php else: ?>
+
+                        <p>
+                            You can unlock a hint for this room,
+                            but it will cost 100 points.
+                        </p>
+
+                        <form method="post" action="game.php">
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                value="<?= escapeHtml(getCsrfToken()) ?>"
+                            >
+
+                            <input type="hidden" name="action" value="hint">
+
+                            <button type="submit" class="hint-button">
+                                Get Hint (-100 Points)
+                            </button>
+                        </form>
+
+                    <?php endif; ?>
+                </div>
+
+                <div class="game-stats">
+                    <p>
+                        <strong>Wrong Attempts in This Room:</strong>
+                        <?= (int) $wrongAttempts ?>
+                    </p>
+
+                    <p>
+                        <strong>Total Wrong Answers:</strong>
+                        <?= $totalWrongAttempts ?>
+                    </p>
+
+                    <p>
+                        <strong>Total Hints Used:</strong>
+                        <?= $totalHintsUsed ?>
+                    </p>
+                </div>
 
                 <p class="game-note">
                     Each wrong answer costs 50 points.
+                    Each room hint costs 100 points.
                 </p>
 
             <?php endif; ?>
