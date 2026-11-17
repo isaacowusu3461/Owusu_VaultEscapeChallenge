@@ -3,6 +3,8 @@
 // Game functions for Vault Escape Challenge.
 // The game uses PHP sessions to track rooms, scores, hints, and time.
 
+require_once __DIR__ . '/leaderboard_functions.php';
+
 // Return the puzzle details for a room.
 function getRoom(int $roomNumber): ?array
 {
@@ -70,6 +72,12 @@ function initializeGame(): void
 
     if (!isset($_SESSION['time_bonus'])) {
         $_SESSION['time_bonus'] = 0;
+    }
+
+    initializeLeaderboard();
+
+    if (!isset($_SESSION['leaderboard_recorded'])) {
+        $_SESSION['leaderboard_recorded'] = false;
     }
 }
 
@@ -181,16 +189,17 @@ function completeRoom(int $roomNumber): void
         $_SESSION['game_completed'] = true;
         $_SESSION['room'] = 4;
 
-        // Save the finish time before calculating the bonus.
+        // Stop the timer before calculating the bonus.
         $_SESSION['game_finished_at'] = time();
 
         $elapsedSeconds = getElapsedSeconds();
         $bonus = calculateTimeBonus($elapsedSeconds);
 
         $_SESSION['time_bonus'] = $bonus;
-
-        // This code runs only when Room 3 is first completed.
         $_SESSION['score'] = (int) $_SESSION['score'] + $bonus;
+
+        // Save the completed result in this browser session.
+        recordLeaderboardResult();
     } else {
         $_SESSION['room'] = $roomNumber + 1;
     }
