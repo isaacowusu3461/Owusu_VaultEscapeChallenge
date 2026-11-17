@@ -1,7 +1,7 @@
 
 <?php
 // Main game page for Vault Escape Challenge.
-// This page handles answers, hints, timing, and adaptive feedback.
+// Answers, hints, timing, and difficulty are handled on the server.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/game_functions.php';
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageType = 'success';
     } else {
         $currentRoom = (int) $_SESSION['room'];
-        $roomData = getRoom($currentRoom);
+        $roomData = getCurrentRoom();
 
         if ($roomData === null) {
             http_response_code(500);
@@ -77,17 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $completed = (bool) $_SESSION['game_completed'];
 $currentRoom = (int) $_SESSION['room'];
 $score = (int) $_SESSION['score'];
-$roomData = $completed ? null : getRoom($currentRoom);
+$roomData = $completed ? null : getCurrentRoom();
 
 if (!$completed && $roomData === null) {
     http_response_code(500);
     exit('The current room could not be loaded.');
 }
 
-// Show feedback after successful redirects.
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['unlocked']) && !$completed) {
-        $message = 'Correct answer! The door unlocked. Welcome to the next room.';
+        $message = 'Correct answer! The next vault door is now open.';
         $messageType = 'success';
     } elseif (isset($_GET['finished']) && $completed) {
         $message = 'Congratulations! You escaped the vault.';
@@ -108,22 +107,28 @@ $hintUsed = !$completed && hasUsedHint($currentRoom);
 $totalWrongAttempts = getTotalWrongAttempts();
 $totalHintsUsed = getTotalHintsUsed();
 
-$elapsedSeconds = getElapsedSeconds();
-$formattedTime = formatGameTime($elapsedSeconds);
+$formattedTime = formatGameTime(getElapsedSeconds());
 $timeBonus = (int) ($_SESSION['time_bonus'] ?? 0);
 
-// Adaptive feedback is calculated for the current room.
 $adaptiveFeedback = '';
 $adaptationExplanation = '';
 $roomTime = '';
+$difficulty = '';
+$difficultyReason = '';
 
 if (!$completed) {
     $adaptiveFeedback = getAdaptiveFeedback($currentRoom);
     $adaptationExplanation = getAdaptationExplanation($currentRoom);
     $roomTime = formatGameTime(getRoomElapsedSeconds($currentRoom));
+
+    $difficulty = getCurrentRoomDifficulty();
+
+    $difficultyReason = (string) (
+        $_SESSION['difficulty_reasons'][$currentRoom]
+        ?? 'The standard puzzle is selected.'
+    );
 }
 
-// The player profile is displayed after finishing the game.
 $playerProfile = $completed ? getPlayerProfile() : null;
 ?>
 
@@ -212,13 +217,22 @@ $playerProfile = $completed ? getPlayerProfile() : null;
                             </strong>
                         </p>
 
-                        <p>
-                            <?= escapeHtml($playerProfile['reason']) ?>
-                        </p>
+                        <p><?= escapeHtml($playerProfile['reason']) ?></p>
+
+                        <h3>Difficulty History</h3>
+
+                        <?php for ($room = 1; $room <= 3; $room++): ?>
+                            <p>
+                                <strong>Room <?= $room ?>:</strong>
+                                <?= escapeHtml(ucfirst(
+                                    $_SESSION['room_difficulty'][$room] ?? 'normal'
+                                )) ?>
+                            </p>
+                        <?php endfor; ?>
 
                         <p class="game-note">
-                            This profile was calculated using your
-                            wrong answers and hint usage.
+                            Difficulty was selected using mistakes,
+                            hint usage, and time spent in earlier rooms.
                         </p>
                     </div>
 
@@ -245,6 +259,19 @@ $playerProfile = $completed ? getPlayerProfile() : null;
                 </div>
 
                 <h2><?= escapeHtml($roomData['title']) ?></h2>
+
+                <div class="adaptive-section">
+                    <h3>Current Difficulty:
+                        <?= escapeHtml(ucfirst($difficulty)) ?>
+                    </h3>
+
+                    <p><?= escapeHtml($difficultyReason) ?></p>
+
+                    <p class="game-note">
+                        Difficulty is selected when you enter a room.
+                        It will not change while you are solving that puzzle.
+                    </p>
+                </div>
 
                 <p><?= escapeHtml($roomData['story']) ?></p>
 

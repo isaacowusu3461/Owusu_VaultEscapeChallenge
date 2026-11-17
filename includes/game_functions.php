@@ -1,45 +1,118 @@
 
 <?php
 // Game functions for Vault Escape Challenge.
-// Sessions store the player's progress, score, hints, and timing.
+// Sessions store progress, scoring, timing, and difficulty.
 
 require_once __DIR__ . '/leaderboard_functions.php';
 require_once __DIR__ . '/adaptive_functions.php';
 
-// Return the puzzle details for a room.
-function getRoom(int $roomNumber): ?array
+// Return a puzzle for the requested room and difficulty.
+function getRoom(int $roomNumber, string $difficulty = 'normal'): ?array
 {
     $rooms = [
         1 => [
             'title' => 'The Math Cipher',
             'story' => 'The first door is protected by a numerical lock. Solve the equation to unlock it.',
-            'question' => 'A vault code follows this rule: (8 x 4) + (18 / 3) - 5. What is the code?',
-            'answer' => '33',
-            'placeholder' => 'Enter the number',
-            'hint' => 'Follow the order of operations. Multiply and divide first, then add and subtract.'
+            'easy' => [
+                'question' => 'What is (5 x 4) + 3?',
+                'answer' => '23',
+                'hint' => 'Multiply 5 by 4, then add 3.'
+            ],
+            'normal' => [
+                'question' => 'A vault code follows this rule: (8 x 4) + (18 / 3) - 5. What is the code?',
+                'answer' => '33',
+                'hint' => 'Follow the order of operations. Multiply and divide first, then add and subtract.'
+            ],
+            'hard' => [
+                'question' => 'Solve: ((12 x 7) - (36 / 3)) / 4 + 9.',
+                'answer' => '27',
+                'hint' => 'Work inside the parentheses first, then divide by 4 and add 9.'
+            ],
+            'placeholder' => 'Enter the number'
         ],
         2 => [
             'title' => 'The Symbol Decoder',
             'story' => 'You have entered a room filled with strange symbols. Decode the message to open the next door.',
-            'question' => 'Using A = 1, B = 2, C = 3, and so on, decode 22 - 1 - 21 - 12 - 20.',
-            'answer' => 'VAULT',
-            'placeholder' => 'Enter the decoded word',
-            'hint' => 'Replace each number with its matching letter in the alphabet. For example, 22 represents V.'
+            'easy' => [
+                'question' => 'Using A = 1, B = 2, C = 3, decode 3 - 1 - 20.',
+                'answer' => 'CAT',
+                'hint' => 'The first letter is C. Match the other numbers to their letters.'
+            ],
+            'normal' => [
+                'question' => 'Using A = 1, B = 2, C = 3, and so on, decode 22 - 1 - 21 - 12 - 20.',
+                'answer' => 'VAULT',
+                'hint' => 'Replace each number with its matching letter in the alphabet. For example, 22 represents V.'
+            ],
+            'hard' => [
+                'question' => 'Using A = 1 through Z = 26, decode 19 - 5 - 3 - 18 - 5 - 20.',
+                'answer' => 'SECRET',
+                'hint' => 'The first number, 19, represents S. Decode the remaining letters.'
+            ],
+            'placeholder' => 'Enter the decoded word'
         ],
         3 => [
             'title' => 'The Pattern Lock',
             'story' => 'This is the final door. The security system displays a number pattern.',
-            'question' => 'Find the next number in the sequence: 3, 6, 12, 24, 48, ?',
-            'answer' => '96',
-            'placeholder' => 'Enter the next number',
-            'hint' => 'Look at how each number changes. Every number is multiplied by the same value.'
+            'easy' => [
+                'question' => 'Find the next number: 5, 10, 15, 20, ?',
+                'answer' => '25',
+                'hint' => 'The pattern increases by the same amount each time.'
+            ],
+            'normal' => [
+                'question' => 'Find the next number in the sequence: 3, 6, 12, 24, 48, ?',
+                'answer' => '96',
+                'hint' => 'Look at how each number changes. Every number is multiplied by the same value.'
+            ],
+            'hard' => [
+                'question' => 'Find the next number: 2, 6, 12, 20, 30, ?',
+                'answer' => '42',
+                'hint' => 'Look at the differences: 4, 6, 8, 10. What difference comes next?'
+            ],
+            'placeholder' => 'Enter the next number'
         ]
     ];
 
-    return $rooms[$roomNumber] ?? null;
+    if (!isset($rooms[$roomNumber])) {
+        return null;
+    }
+
+    if (!in_array($difficulty, ['easy', 'normal', 'hard'], true)) {
+        return null;
+    }
+
+    $room = $rooms[$roomNumber];
+    $puzzle = $room[$difficulty];
+
+    return [
+        'title' => $room['title'],
+        'story' => $room['story'],
+        'question' => $puzzle['question'],
+        'answer' => $puzzle['answer'],
+        'hint' => $puzzle['hint'],
+        'placeholder' => $room['placeholder'],
+        'difficulty' => $difficulty
+    ];
 }
 
-// Set up the game when the player first opens it.
+// Get the difficulty stored for the current room.
+function getCurrentRoomDifficulty(): string
+{
+    $roomNumber = (int) ($_SESSION['room'] ?? 1);
+
+    return (string) (
+        $_SESSION['room_difficulty'][$roomNumber] ?? 'normal'
+    );
+}
+
+// Return the current puzzle using the session difficulty.
+function getCurrentRoom(): ?array
+{
+    $roomNumber = (int) ($_SESSION['room'] ?? 1);
+
+    return getRoom($roomNumber, getCurrentRoomDifficulty());
+}
+
+// Set up game values when they are missing.
 function initializeGame(): void
 {
     if (!isset($_SESSION['room'])) {
@@ -74,9 +147,27 @@ function initializeGame(): void
         $_SESSION['time_bonus'] = 0;
     }
 
-    // Track the time spent in each individual room.
     if (!isset($_SESSION['room_started_at'])) {
         $_SESSION['room_started_at'] = [];
+    }
+
+    if (!isset($_SESSION['room_durations'])) {
+        $_SESSION['room_durations'] = [];
+    }
+
+    if (!isset($_SESSION['room_difficulty'])) {
+        $_SESSION['room_difficulty'] = [];
+    }
+
+    if (!isset($_SESSION['difficulty_reasons'])) {
+        $_SESSION['difficulty_reasons'] = [];
+    }
+
+    // Room 1 always starts at Normal difficulty.
+    if (!isset($_SESSION['room_difficulty'][1])) {
+        $_SESSION['room_difficulty'][1] = 'normal';
+        $_SESSION['difficulty_reasons'][1] =
+            'All players begin with the standard puzzle.';
     }
 
     $currentRoom = (int) $_SESSION['room'];
@@ -96,13 +187,13 @@ function initializeGame(): void
     }
 }
 
-// Check an answer without worrying about capitalization or extra spaces.
+// Compare answers without case sensitivity or extra spaces.
 function isCorrectAnswer(string $submitted, string $expected): bool
 {
     return strcasecmp(trim($submitted), $expected) === 0;
 }
 
-// Record a wrong answer and deduct 50 points.
+// Deduct 50 points for an incorrect answer.
 function recordWrongAnswer(int $roomNumber): void
 {
     if (!isset($_SESSION['wrong_attempts'][$roomNumber])) {
@@ -111,17 +202,16 @@ function recordWrongAnswer(int $roomNumber): void
 
     $_SESSION['wrong_attempts'][$roomNumber]++;
 
-    // Penalties cannot reduce the score below zero.
     $_SESSION['score'] = max(0, (int) $_SESSION['score'] - 50);
 }
 
-// Check whether a hint has already been unlocked.
+// Check whether the room hint was unlocked.
 function hasUsedHint(int $roomNumber): bool
 {
     return !empty($_SESSION['hints_used'][$roomNumber]);
 }
 
-// Unlock the room hint and charge only once.
+// Unlock a hint and deduct points only once.
 function requestHint(int $roomNumber): bool
 {
     if (getRoom($roomNumber) === null || hasUsedHint($roomNumber)) {
@@ -134,19 +224,19 @@ function requestHint(int $roomNumber): bool
     return true;
 }
 
-// Count incorrect answers across all rooms.
+// Count wrong answers across all rooms.
 function getTotalWrongAttempts(): int
 {
     return array_sum($_SESSION['wrong_attempts'] ?? []);
 }
 
-// Count all unlocked hints.
+// Count unlocked hints.
 function getTotalHintsUsed(): int
 {
     return count(array_filter($_SESSION['hints_used'] ?? []));
 }
 
-// Calculate the total elapsed game time.
+// Calculate the total game time.
 function getElapsedSeconds(): int
 {
     if (!isset($_SESSION['game_started_at'])) {
@@ -159,16 +249,17 @@ function getElapsedSeconds(): int
     return max(0, (int) $end - $start);
 }
 
-// Format seconds as minutes and seconds.
+// Format time as minutes and seconds.
 function formatGameTime(int $seconds): string
 {
-    $minutes = intdiv($seconds, 60);
-    $remainingSeconds = $seconds % 60;
-
-    return sprintf('%02d:%02d', $minutes, $remainingSeconds);
+    return sprintf(
+        '%02d:%02d',
+        intdiv($seconds, 60),
+        $seconds % 60
+    );
 }
 
-// Calculate the completion time bonus.
+// Calculate the time bonus.
 function calculateTimeBonus(int $elapsedSeconds): int
 {
     if ($elapsedSeconds < 120) {
@@ -186,7 +277,7 @@ function calculateTimeBonus(int $elapsedSeconds): int
     return 0;
 }
 
-// Move to the next room after a correct answer.
+// Complete the current room and adjust the next difficulty.
 function completeRoom(int $roomNumber): void
 {
     if (
@@ -196,25 +287,34 @@ function completeRoom(int $roomNumber): void
         return;
     }
 
+    // Save how long this room took.
+    $_SESSION['room_durations'][$roomNumber] =
+        getRoomElapsedSeconds($roomNumber);
+
     if ($roomNumber === 3) {
         $_SESSION['game_completed'] = true;
         $_SESSION['room'] = 4;
         $_SESSION['game_finished_at'] = time();
 
-        $elapsedSeconds = getElapsedSeconds();
-        $bonus = calculateTimeBonus($elapsedSeconds);
+        $bonus = calculateTimeBonus(getElapsedSeconds());
 
         $_SESSION['time_bonus'] = $bonus;
         $_SESSION['score'] = (int) $_SESSION['score'] + $bonus;
 
-        // Save the final score to the session leaderboard.
         recordLeaderboardResult();
     } else {
         $nextRoom = $roomNumber + 1;
 
-        $_SESSION['room'] = $nextRoom;
+        // The previous room determines the next difficulty.
+        $decision = calculateNextDifficulty($roomNumber);
 
-        // The next room gets its own starting time.
+        $_SESSION['room_difficulty'][$nextRoom] =
+            $decision['level'];
+
+        $_SESSION['difficulty_reasons'][$nextRoom] =
+            $decision['reason'];
+
+        $_SESSION['room'] = $nextRoom;
         $_SESSION['room_started_at'][$nextRoom] = time();
     }
 }

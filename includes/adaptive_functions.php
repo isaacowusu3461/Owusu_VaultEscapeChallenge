@@ -1,7 +1,7 @@
 
 <?php
 // Adaptive gameplay functions.
-// These rules adjust feedback based on the player's performance.
+// These rules use mistakes, hints, and time to adjust the next room.
 
 // Count how long the player has spent in the current room.
 function getRoomElapsedSeconds(int $roomNumber): int
@@ -11,7 +11,39 @@ function getRoomElapsedSeconds(int $roomNumber): int
     return max(0, time() - (int) $startedAt);
 }
 
-// Return guidance for the current room.
+// Choose the difficulty for the next room.
+function calculateNextDifficulty(int $completedRoom): array
+{
+    $wrong = (int) ($_SESSION['wrong_attempts'][$completedRoom] ?? 0);
+    $hintUsed = !empty($_SESSION['hints_used'][$completedRoom]);
+    $seconds = (int) (
+        $_SESSION['room_durations'][$completedRoom]
+        ?? getRoomElapsedSeconds($completedRoom)
+    );
+
+    // Players who need more help get an easier next puzzle.
+    if ($wrong >= 3 || ($wrong >= 2 && $hintUsed) || $seconds >= 300) {
+        return [
+            'level' => 'easy',
+            'reason' => 'The previous room took several attempts or extra time, so the next puzzle has been simplified.'
+        ];
+    }
+
+    // Fast, accurate solutions lead to a harder puzzle.
+    if ($wrong === 0 && !$hintUsed && $seconds < 120) {
+        return [
+            'level' => 'hard',
+            'reason' => 'You solved the previous room quickly without mistakes or hints, so the next puzzle is more challenging.'
+        ];
+    }
+
+    return [
+        'level' => 'normal',
+        'reason' => 'Your previous performance suggests that the standard puzzle is a suitable challenge.'
+    ];
+}
+
+// Give feedback based on the player's attempts and time.
 function getAdaptiveFeedback(int $roomNumber): string
 {
     $wrong = (int) ($_SESSION['wrong_attempts'][$roomNumber] ?? 0);
@@ -21,8 +53,8 @@ function getAdaptiveFeedback(int $roomNumber): string
     if ($wrong >= 3) {
         $messages = [
             1 => 'Try solving the multiplication and division first. Then combine the results and subtract 5.',
-            2 => 'Use the alphabet positions one at a time. The first number, 22, gives you V.',
-            3 => 'Compare consecutive numbers. The sequence doubles each time.'
+            2 => 'Convert each number into its alphabet letter, one at a time.',
+            3 => 'Compare each number with the one before it to find the rule.'
         ];
 
         return $messages[$roomNumber] ?? 'Review the puzzle carefully.';
@@ -30,9 +62,9 @@ function getAdaptiveFeedback(int $roomNumber): string
 
     if ($wrong >= 2) {
         $messages = [
-            1 => 'Check the order of operations before calculating the final number.',
-            2 => 'Write down the alphabet and match each number to its letter.',
-            3 => 'Look for a multiplication pattern between the numbers.'
+            1 => 'Check the order of operations before calculating.',
+            2 => 'Write down the alphabet and match the numbers to letters.',
+            3 => 'Look for a repeated mathematical operation.'
         ];
 
         return $messages[$roomNumber] ?? 'Try a different approach.';
@@ -53,7 +85,7 @@ function getAdaptiveFeedback(int $roomNumber): string
     return 'Read the puzzle carefully and enter your answer when you are ready.';
 }
 
-// Classify the player's problem-solving approach.
+// Classify the player's overall problem-solving approach.
 function getPlayerProfile(): array
 {
     $wrong = array_sum($_SESSION['wrong_attempts'] ?? []);
@@ -86,7 +118,7 @@ function getPlayerProfile(): array
     ];
 }
 
-// Explain which factors are being considered.
+// Explain what the adaptive feedback is measuring.
 function getAdaptationExplanation(int $roomNumber): string
 {
     $wrong = (int) ($_SESSION['wrong_attempts'][$roomNumber] ?? 0);
