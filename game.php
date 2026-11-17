@@ -1,7 +1,7 @@
 
 <?php
 // Main game page for Vault Escape Challenge.
-// Answers, hints, timing, and difficulty are handled on the server.
+// The PHP game logic stays the same, but the interface is improved.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/game_functions.php';
@@ -86,7 +86,7 @@ if (!$completed && $roomData === null) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['unlocked']) && !$completed) {
-        $message = 'Correct answer! The next vault door is now open.';
+        $message = 'Correct answer! The previous door unlocked.';
         $messageType = 'success';
     } elseif (isset($_GET['finished']) && $completed) {
         $message = 'Congratulations! You escaped the vault.';
@@ -130,6 +130,19 @@ if (!$completed) {
 }
 
 $playerProfile = $completed ? getPlayerProfile() : null;
+
+// The animation appears after the server confirms a correct answer.
+$showDoorAnimation = (
+    $_SERVER['REQUEST_METHOD'] === 'GET'
+    && (
+        isset($_GET['unlocked'])
+        || (isset($_GET['finished']) && $completed)
+    )
+);
+
+// Track progress through the three puzzle rooms.
+$roomsSolved = $completed ? 3 : max(0, $currentRoom - 1);
+$progressPercent = (int) (($roomsSolved / 3) * 100);
 ?>
 
 <!DOCTYPE html>
@@ -156,6 +169,46 @@ $playerProfile = $completed ? getPlayerProfile() : null;
                 <p><strong>Time:</strong> <?= escapeHtml($formattedTime) ?></p>
             </div>
 
+            <div class="progress-section">
+                <div class="progress-heading">
+                    <h2>Escape Progress</h2>
+                    <span><?= $roomsSolved ?> of 3 rooms completed</span>
+                </div>
+
+                <div
+                    class="progress-track"
+                    role="progressbar"
+                    aria-label="Rooms completed"
+                    aria-valuemin="0"
+                    aria-valuemax="3"
+                    aria-valuenow="<?= $roomsSolved ?>"
+                >
+                    <div
+                        class="progress-fill"
+                        style="width: <?= $progressPercent ?>%;"
+                    ></div>
+                </div>
+
+                <ol class="room-steps">
+                    <?php for ($room = 1; $room <= 3; $room++): ?>
+                        <?php
+                        $stepClass = '';
+
+                        if ($room <= $roomsSolved) {
+                            $stepClass = 'step-completed';
+                        } elseif ($room === $currentRoom && !$completed) {
+                            $stepClass = 'step-current';
+                        }
+                        ?>
+
+                        <li class="<?= $stepClass ?>">
+                            <span class="step-number"><?= $room ?></span>
+                            <span>Room <?= $room ?></span>
+                        </li>
+                    <?php endfor; ?>
+                </ol>
+            </div>
+
             <?php if ($message !== ''): ?>
                 <div
                     class="<?= $messageType === 'success' ? 'success-message' : 'error-message' ?>"
@@ -165,14 +218,37 @@ $playerProfile = $completed ? getPlayerProfile() : null;
                 </div>
             <?php endif; ?>
 
+            <?php if ($showDoorAnimation): ?>
+                <div class="door-animation-section">
+                    <h2>
+                        <?= $completed ? 'Vault Escaped!' : 'Door Unlocked!' ?>
+                    </h2>
+
+                    <div class="door-scene" aria-hidden="true">
+                        <div class="door-frame">
+                            <div class="animated-door">
+                                <div class="door-wheel"></div>
+                                <div class="door-handle"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p>
+                        <?= $completed
+                            ? 'You opened the final vault door.'
+                            : 'You unlocked the previous door and entered the next room.' ?>
+                    </p>
+                </div>
+            <?php endif; ?>
+
             <?php if ($completed): ?>
 
                 <div class="completion-box">
-                    <h2>Vault Escaped!</h2>
+                    <h2>Congratulations!</h2>
 
                     <p>
-                        Congratulations, <?= escapeHtml($username) ?>!
-                        You successfully completed all three rooms.
+                        <?= escapeHtml($username) ?>,
+                        you successfully escaped all three rooms.
                     </p>
 
                     <h3>Final Results</h3>
@@ -254,14 +330,18 @@ $playerProfile = $completed ? getPlayerProfile() : null;
                 </p>
 
                 <div class="vault-door">
-                    <span class="door-icon" aria-hidden="true">🔒</span>
+                    <div class="vault-door-art" aria-hidden="true">
+                        <div class="vault-wheel"></div>
+                    </div>
+
                     <p>Door <?= $currentRoom ?> Locked</p>
                 </div>
 
                 <h2><?= escapeHtml($roomData['title']) ?></h2>
 
                 <div class="adaptive-section">
-                    <h3>Current Difficulty:
+                    <h3>
+                        Current Difficulty:
                         <?= escapeHtml(ucfirst($difficulty)) ?>
                     </h3>
 

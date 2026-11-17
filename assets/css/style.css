@@ -217,24 +217,6 @@ main {
     color: #49566a;
 }
 
-.vault-door {
-    background-color: #e8e8e8;
-    border: 3px solid #555;
-    border-radius: 6px;
-    padding: 25px;
-    text-align: center;
-    margin: 20px 0;
-}
-
-.door-icon {
-    font-size: 42px;
-}
-
-.vault-door p {
-    font-weight: bold;
-    margin-bottom: 0;
-}
-
 .puzzle-box {
     background-color: #f7f7f7;
     border: 1px solid #ccc;
@@ -249,11 +231,6 @@ main {
 
 .puzzle-form button {
     width: 100%;
-}
-
-.attempt-count {
-    margin-top: 20px;
-    font-weight: bold;
 }
 
 .game-note {
@@ -329,7 +306,7 @@ main {
     margin: 8px 0;
 }
 
-/* Final results and time bonus. */
+/* Final results styling. */
 
 .results-summary {
     max-width: 460px;
@@ -349,6 +326,277 @@ main {
     border-top: 1px solid #bbb;
     padding-top: 15px;
     font-size: 20px;
+}
+
+/* Adaptive feedback styling. */
+
+.adaptive-section {
+    background-color: #eef2f6;
+    border: 1px solid #c7d1dd;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.adaptive-section h3 {
+    margin-top: 0;
+    color: #303846;
+}
+
+/* Progress indicator. */
+
+.progress-section {
+    margin: 25px 0;
+    padding: 20px;
+    background-color: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.progress-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-heading h2 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.progress-heading span {
+    font-size: 14px;
+    color: #555;
+}
+
+.progress-track {
+    height: 12px;
+    background-color: #d9d9d9;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 18px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #55785e;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.room-steps {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.room-steps li {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+    text-align: center;
+}
+
+.step-number {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: #444;
+}
+
+.step-completed .step-number {
+    background-color: #55785e;
+    color: white;
+}
+
+.step-current .step-number {
+    background-color: #303846;
+    color: white;
+}
+
+.step-current {
+    font-weight: bold;
+}
+
+/* Vault door design. */
+
+.vault-door {
+    background-color: #dce0e4;
+    border: 3px solid #69727b;
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.vault-door-art {
+    width: 170px;
+    height: 190px;
+    background: linear-gradient(135deg, #8b949e, #434d58);
+    border: 8px solid #303846;
+    border-radius: 8px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 15px #222;
+}
+
+.vault-wheel {
+    width: 80px;
+    height: 80px;
+    border: 9px solid #d3d8dd;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 0 5px #434d58;
+}
+
+.vault-wheel::before,
+.vault-wheel::after {
+    content: "";
+    position: absolute;
+    background-color: #d3d8dd;
+}
+
+.vault-wheel::before {
+    width: 9px;
+    height: 70px;
+    left: 27px;
+    top: -4px;
+}
+
+.vault-wheel::after {
+    width: 70px;
+    height: 9px;
+    left: -4px;
+    top: 27px;
+}
+
+.vault-door p {
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+/* Door opening animation after a correct answer. */
+
+.door-animation-section {
+    text-align: center;
+    padding: 25px;
+    margin: 20px 0;
+    background-color: #edf5ee;
+    border: 1px solid #8aab90;
+    border-radius: 6px;
+}
+
+.door-animation-section h2 {
+    margin-top: 0;
+}
+
+.door-scene {
+    width: 190px;
+    height: 200px;
+    margin: 20px auto;
+    perspective: 600px;
+}
+
+.door-frame {
+    width: 100%;
+    height: 100%;
+    background-color: #252c35;
+    border: 10px solid #59636e;
+    border-radius: 5px;
+    position: relative;
+    overflow: visible;
+}
+
+.animated-door {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    background: linear-gradient(135deg, #9ca5af, #4a5663);
+    border: 3px solid #303846;
+    transform-origin: left center;
+    animation: openVaultDoor 1.5s ease-in-out forwards;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.door-wheel {
+    width: 70px;
+    height: 70px;
+    border: 8px solid #d3d8dd;
+    border-radius: 50%;
+    position: relative;
+}
+
+.door-wheel::before,
+.door-wheel::after {
+    content: "";
+    position: absolute;
+    background-color: #d3d8dd;
+}
+
+.door-wheel::before {
+    width: 8px;
+    height: 60px;
+    left: 23px;
+    top: -3px;
+}
+
+.door-wheel::after {
+    width: 60px;
+    height: 8px;
+    left: -3px;
+    top: 23px;
+}
+
+.door-handle {
+    width: 12px;
+    height: 12px;
+    background-color: #d3d8dd;
+    border-radius: 50%;
+    position: absolute;
+    right: 12px;
+}
+
+@keyframes openVaultDoor {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateY(-105deg);
+    }
+}
+
+/* Accessibility and smaller screens. */
+
+@media (prefers-reduced-motion: reduce) {
+    .animated-door {
+        animation: none;
+        transform: rotateY(-105deg);
+    }
+
+    .progress-fill {
+        transition: none;
+    }
 }
 
 footer {
@@ -384,5 +632,14 @@ footer {
     .game-top {
         flex-direction: column;
         gap: 0;
+    }
+
+    .progress-heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .door-animation-section {
+        padding: 15px;
     }
 }
