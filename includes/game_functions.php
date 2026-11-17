@@ -1,9 +1,10 @@
 
 <?php
 // Game functions for Vault Escape Challenge.
-// The game uses PHP sessions to track rooms, scores, hints, and time.
+// Sessions store the player's progress, score, hints, and timing.
 
 require_once __DIR__ . '/leaderboard_functions.php';
+require_once __DIR__ . '/adaptive_functions.php';
 
 // Return the puzzle details for a room.
 function getRoom(int $roomNumber): ?array
@@ -38,7 +39,7 @@ function getRoom(int $roomNumber): ?array
     return $rooms[$roomNumber] ?? null;
 }
 
-// Set up game values when they are missing.
+// Set up the game when the player first opens it.
 function initializeGame(): void
 {
     if (!isset($_SESSION['room'])) {
@@ -61,17 +62,31 @@ function initializeGame(): void
         $_SESSION['game_completed'] = false;
     }
 
-    // The timer starts when the player first enters the game.
     if (!isset($_SESSION['game_started_at'])) {
         $_SESSION['game_started_at'] = time();
     }
 
-    if (!isset($_SESSION['game_finished_at'])) {
+    if (!array_key_exists('game_finished_at', $_SESSION)) {
         $_SESSION['game_finished_at'] = null;
     }
 
     if (!isset($_SESSION['time_bonus'])) {
         $_SESSION['time_bonus'] = 0;
+    }
+
+    // Track the time spent in each individual room.
+    if (!isset($_SESSION['room_started_at'])) {
+        $_SESSION['room_started_at'] = [];
+    }
+
+    $currentRoom = (int) $_SESSION['room'];
+
+    if (
+        empty($_SESSION['game_completed'])
+        && getRoom($currentRoom) !== null
+        && !isset($_SESSION['room_started_at'][$currentRoom])
+    ) {
+        $_SESSION['room_started_at'][$currentRoom] = time();
     }
 
     initializeLeaderboard();
@@ -96,17 +111,17 @@ function recordWrongAnswer(int $roomNumber): void
 
     $_SESSION['wrong_attempts'][$roomNumber]++;
 
-    // The score cannot become negative from penalties.
+    // Penalties cannot reduce the score below zero.
     $_SESSION['score'] = max(0, (int) $_SESSION['score'] - 50);
 }
 
-// Check whether the hint was already unlocked.
+// Check whether a hint has already been unlocked.
 function hasUsedHint(int $roomNumber): bool
 {
     return !empty($_SESSION['hints_used'][$roomNumber]);
 }
 
-// Charge for a hint only the first time it is requested.
+// Unlock the room hint and charge only once.
 function requestHint(int $roomNumber): bool
 {
     if (getRoom($roomNumber) === null || hasUsedHint($roomNumber)) {
@@ -114,25 +129,24 @@ function requestHint(int $roomNumber): bool
     }
 
     $_SESSION['hints_used'][$roomNumber] = true;
-
     $_SESSION['score'] = max(0, (int) $_SESSION['score'] - 100);
 
     return true;
 }
 
-// Count all wrong answers across the three rooms.
+// Count incorrect answers across all rooms.
 function getTotalWrongAttempts(): int
 {
     return array_sum($_SESSION['wrong_attempts'] ?? []);
 }
 
-// Count how many hints were unlocked.
+// Count all unlocked hints.
 function getTotalHintsUsed(): int
 {
     return count(array_filter($_SESSION['hints_used'] ?? []));
 }
 
-// Calculate how long the player has been playing.
+// Calculate the total elapsed game time.
 function getElapsedSeconds(): int
 {
     if (!isset($_SESSION['game_started_at'])) {
@@ -140,14 +154,12 @@ function getElapsedSeconds(): int
     }
 
     $start = (int) $_SESSION['game_started_at'];
-
-    // Once the game ends, the timer stops permanently.
     $end = $_SESSION['game_finished_at'] ?? time();
 
     return max(0, (int) $end - $start);
 }
 
-// Convert seconds into a readable time.
+// Format seconds as minutes and seconds.
 function formatGameTime(int $seconds): string
 {
     $minutes = intdiv($seconds, 60);
@@ -156,7 +168,7 @@ function formatGameTime(int $seconds): string
     return sprintf('%02d:%02d', $minutes, $remainingSeconds);
 }
 
-// Award a bonus based on how quickly the player escapes.
+// Calculate the completion time bonus.
 function calculateTimeBonus(int $elapsedSeconds): int
 {
     if ($elapsedSeconds < 120) {
@@ -174,10 +186,9 @@ function calculateTimeBonus(int $elapsedSeconds): int
     return 0;
 }
 
-// Move the player to the next room after a correct answer.
+// Move to the next room after a correct answer.
 function completeRoom(int $roomNumber): void
 {
-    // Only the current room can be completed.
     if (
         !empty($_SESSION['game_completed'])
         || $roomNumber !== (int) ($_SESSION['room'] ?? 0)
@@ -188,8 +199,6 @@ function completeRoom(int $roomNumber): void
     if ($roomNumber === 3) {
         $_SESSION['game_completed'] = true;
         $_SESSION['room'] = 4;
-
-        // Stop the timer before calculating the bonus.
         $_SESSION['game_finished_at'] = time();
 
         $elapsedSeconds = getElapsedSeconds();
@@ -198,9 +207,14 @@ function completeRoom(int $roomNumber): void
         $_SESSION['time_bonus'] = $bonus;
         $_SESSION['score'] = (int) $_SESSION['score'] + $bonus;
 
-        // Save the completed result in this browser session.
+        // Save the final score to the session leaderboard.
         recordLeaderboardResult();
     } else {
-        $_SESSION['room'] = $roomNumber + 1;
+        $nextRoom = $roomNumber + 1;
+
+        $_SESSION['room'] = $nextRoom;
+
+        // The next room gets its own starting time.
+        $_SESSION['room_started_at'][$nextRoom] = time();
     }
 }

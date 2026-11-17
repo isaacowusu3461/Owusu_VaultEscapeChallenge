@@ -1,7 +1,7 @@
 
 <?php
 // Main game page for Vault Escape Challenge.
-// This page handles answers, hints, and the game timer.
+// This page handles answers, hints, timing, and adaptive feedback.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/game_functions.php';
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 recordWrongAnswer($currentRoom);
 
-                $message = 'That answer is incorrect. You lost 50 points. Try again.';
+                $message = 'Incorrect answer. You lost 50 points. Review the adaptive feedback below.';
                 $messageType = 'error';
             }
         } else {
@@ -84,7 +84,7 @@ if (!$completed && $roomData === null) {
     exit('The current room could not be loaded.');
 }
 
-// Show feedback after a successful form submission.
+// Show feedback after successful redirects.
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['unlocked']) && !$completed) {
         $message = 'Correct answer! The door unlocked. Welcome to the next room.';
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($_GET['hint'] === 'unlocked') {
             $message = 'Hint unlocked. 100 points were deducted.';
         } else {
-            $message = 'You have already unlocked this hint. No additional points were deducted.';
+            $message = 'This hint is already unlocked. No additional points were deducted.';
         }
 
         $messageType = 'success';
@@ -111,6 +111,20 @@ $totalHintsUsed = getTotalHintsUsed();
 $elapsedSeconds = getElapsedSeconds();
 $formattedTime = formatGameTime($elapsedSeconds);
 $timeBonus = (int) ($_SESSION['time_bonus'] ?? 0);
+
+// Adaptive feedback is calculated for the current room.
+$adaptiveFeedback = '';
+$adaptationExplanation = '';
+$roomTime = '';
+
+if (!$completed) {
+    $adaptiveFeedback = getAdaptiveFeedback($currentRoom);
+    $adaptationExplanation = getAdaptationExplanation($currentRoom);
+    $roomTime = formatGameTime(getRoomElapsedSeconds($currentRoom));
+}
+
+// The player profile is displayed after finishing the game.
+$playerProfile = $completed ? getPlayerProfile() : null;
 ?>
 
 <!DOCTYPE html>
@@ -189,9 +203,34 @@ $timeBonus = (int) ($_SESSION['time_bonus'] ?? 0);
                         </p>
                     </div>
 
-                    <a href="dashboard.php" class="action-button">
-                        Back to Dashboard
-                    </a>
+                    <div class="adaptive-section">
+                        <h3>Your Player Profile</h3>
+
+                        <p>
+                            <strong>
+                                <?= escapeHtml($playerProfile['name']) ?>
+                            </strong>
+                        </p>
+
+                        <p>
+                            <?= escapeHtml($playerProfile['reason']) ?>
+                        </p>
+
+                        <p class="game-note">
+                            This profile was calculated using your
+                            wrong answers and hint usage.
+                        </p>
+                    </div>
+
+                    <div class="dashboard-actions">
+                        <a href="leaderboard.php" class="action-button">
+                            View Leaderboard
+                        </a>
+
+                        <a href="dashboard.php" class="action-button secondary-button">
+                            Back to Dashboard
+                        </a>
+                    </div>
                 </div>
 
             <?php else: ?>
@@ -237,6 +276,16 @@ $timeBonus = (int) ($_SESSION['time_bonus'] ?? 0);
 
                     <button type="submit">Unlock Door</button>
                 </form>
+
+                <div class="adaptive-section">
+                    <h3>Adaptive Assistance</h3>
+
+                    <p><?= escapeHtml($adaptiveFeedback) ?></p>
+
+                    <p class="game-note">
+                        <?= escapeHtml($adaptationExplanation) ?>
+                    </p>
+                </div>
 
                 <div class="hint-section">
                     <h3>Need Help?</h3>
@@ -294,7 +343,12 @@ $timeBonus = (int) ($_SESSION['time_bonus'] ?? 0);
                     </p>
 
                     <p>
-                        <strong>Elapsed Time:</strong>
+                        <strong>Time in Current Room:</strong>
+                        <?= escapeHtml($roomTime) ?>
+                    </p>
+
+                    <p>
+                        <strong>Total Elapsed Time:</strong>
                         <?= escapeHtml($formattedTime) ?>
                     </p>
                 </div>
