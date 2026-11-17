@@ -1,11 +1,14 @@
 
 <?php
-// Vault Escape Challenge
+// Vault Escape Challenge homepage.
 // CSC 6370 - Web Programming
 // Isaac Owusu
 
-// Start a session so we can track the player later.
-session_start();
+require_once __DIR__ . '/includes/auth.php';
+
+startGameSession();
+
+$loggedIn = isLoggedIn();
 ?>
 
 <!DOCTYPE html>
@@ -44,8 +47,12 @@ session_start();
             </ul>
 
             <div class="actions">
-                <a href="register.php">Create Account</a>
-                <a href="login.php">Login</a>
+                <?php if ($loggedIn): ?>
+                    <a href="dashboard.php">Go to Dashboard</a>
+                <?php else: ?>
+                    <a href="register.php">Create Account</a>
+                    <a href="login.php">Login</a>
+                <?php endif; ?>
             </div>
         </section>
     </main>

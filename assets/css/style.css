@@ -33,7 +33,8 @@ main {
 }
 
 .welcome,
-.form-container {
+.form-container,
+.dashboard-container {
     background-color: white;
     max-width: 700px;
     margin: 0 auto;
@@ -43,15 +44,18 @@ main {
 }
 
 .welcome h2,
-.form-container h2 {
+.form-container h2,
+.dashboard-container h2 {
     margin-top: 0;
 }
 
-.welcome li {
+.welcome li,
+.dashboard-container li {
     margin-bottom: 10px;
 }
 
-.actions {
+.actions,
+.dashboard-actions {
     display: flex;
     gap: 12px;
     margin-top: 25px;
@@ -59,7 +63,9 @@ main {
 }
 
 .actions a,
-.form-container button {
+.action-button,
+.form-container button,
+.logout-button {
     display: inline-block;
     padding: 12px 20px;
     background-color: #303846;
@@ -69,9 +75,11 @@ main {
     border-radius: 4px;
     font-size: 16px;
     cursor: pointer;
+    text-align: center;
 }
 
 .actions a:hover,
+.action-button:hover,
 .form-container button:hover {
     background-color: #49566a;
 }
@@ -139,6 +147,47 @@ main {
     border-radius: 4px;
 }
 
+.player-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 25px 0;
+}
+
+.stat-box {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    text-align: center;
+}
+
+.stat-box h3 {
+    font-size: 15px;
+    margin-top: 0;
+}
+
+.stat-box p {
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+.secondary-button {
+    background-color: #586575;
+}
+
+.logout-button {
+    background-color: #8a3434;
+}
+
+.logout-button:hover {
+    background-color: #a33f3f;
+}
+
+.dashboard-actions form {
+    margin: 0;
+}
+
 footer {
     background-color: #303846;
     color: white;
@@ -148,15 +197,23 @@ footer {
 
 @media (max-width: 600px) {
     .welcome,
-    .form-container {
+    .form-container,
+    .dashboard-container {
         padding: 18px;
     }
 
-    .actions {
+    .actions,
+    .dashboard-actions {
         flex-direction: column;
     }
 
-    .actions a {
-        text-align: center;
+    .actions a,
+    .dashboard-actions a,
+    .dashboard-actions button {
+        width: 100%;
+    }
+
+    .player-stats {
+        grid-template-columns: 1fr;
     }
 }
