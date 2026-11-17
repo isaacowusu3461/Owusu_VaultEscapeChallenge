@@ -209,6 +209,7 @@ main {
     gap: 15px;
     border-bottom: 1px solid #ddd;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .room-progress {
@@ -326,6 +327,28 @@ main {
 
 .game-stats p {
     margin: 8px 0;
+}
+
+/* Final results and time bonus. */
+
+.results-summary {
+    max-width: 460px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: left;
+}
+
+.results-summary p {
+    margin: 12px 0;
+}
+
+.final-score {
+    border-top: 1px solid #bbb;
+    padding-top: 15px;
+    font-size: 20px;
 }
 
 footer {

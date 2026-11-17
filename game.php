@@ -1,7 +1,7 @@
 
 <?php
-// Main game page.
-// Players solve each room and can request one paid hint per room.
+// Main game page for Vault Escape Challenge.
+// This page handles answers, hints, and the game timer.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/game_functions.php';
@@ -84,7 +84,7 @@ if (!$completed && $roomData === null) {
     exit('The current room could not be loaded.');
 }
 
-// Show messages after redirects.
+// Show feedback after a successful form submission.
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['unlocked']) && !$completed) {
         $message = 'Correct answer! The door unlocked. Welcome to the next room.';
@@ -107,6 +107,10 @@ $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
 $hintUsed = !$completed && hasUsedHint($currentRoom);
 $totalWrongAttempts = getTotalWrongAttempts();
 $totalHintsUsed = getTotalHintsUsed();
+
+$elapsedSeconds = getElapsedSeconds();
+$formattedTime = formatGameTime($elapsedSeconds);
+$timeBonus = (int) ($_SESSION['time_bonus'] ?? 0);
 ?>
 
 <!DOCTYPE html>
@@ -130,6 +134,7 @@ $totalHintsUsed = getTotalHintsUsed();
             <div class="game-top">
                 <p><strong>Player:</strong> <?= escapeHtml($username) ?></p>
                 <p><strong>Score:</strong> <?= $score ?></p>
+                <p><strong>Time:</strong> <?= escapeHtml($formattedTime) ?></p>
             </div>
 
             <?php if ($message !== ''): ?>
@@ -151,20 +156,38 @@ $totalHintsUsed = getTotalHintsUsed();
                         You successfully completed all three rooms.
                     </p>
 
-                    <p>
-                        <strong>Final Score:</strong>
-                        <?= $score ?> points
-                    </p>
+                    <h3>Final Results</h3>
 
-                    <p>
-                        <strong>Total Wrong Answers:</strong>
-                        <?= $totalWrongAttempts ?>
-                    </p>
+                    <div class="results-summary">
+                        <p><strong>Starting Score:</strong> 1000</p>
 
-                    <p>
-                        <strong>Total Hints Used:</strong>
-                        <?= $totalHintsUsed ?>
-                    </p>
+                        <p>
+                            <strong>Wrong Answers:</strong>
+                            <?= $totalWrongAttempts ?>
+                            (-<?= $totalWrongAttempts * 50 ?> points)
+                        </p>
+
+                        <p>
+                            <strong>Hints Used:</strong>
+                            <?= $totalHintsUsed ?>
+                            (-<?= $totalHintsUsed * 100 ?> points)
+                        </p>
+
+                        <p>
+                            <strong>Completion Time:</strong>
+                            <?= escapeHtml($formattedTime) ?>
+                        </p>
+
+                        <p>
+                            <strong>Time Bonus:</strong>
+                            +<?= $timeBonus ?> points
+                        </p>
+
+                        <p class="final-score">
+                            <strong>Final Score:</strong>
+                            <?= $score ?> points
+                        </p>
+                    </div>
 
                     <a href="dashboard.php" class="action-button">
                         Back to Dashboard
@@ -269,11 +292,17 @@ $totalHintsUsed = getTotalHintsUsed();
                         <strong>Total Hints Used:</strong>
                         <?= $totalHintsUsed ?>
                     </p>
+
+                    <p>
+                        <strong>Elapsed Time:</strong>
+                        <?= escapeHtml($formattedTime) ?>
+                    </p>
                 </div>
 
                 <p class="game-note">
                     Each wrong answer costs 50 points.
                     Each room hint costs 100 points.
+                    A time bonus is added after completing the final room.
                 </p>
 
             <?php endif; ?>
