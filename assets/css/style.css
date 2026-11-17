@@ -34,7 +34,8 @@ main {
 
 .welcome,
 .form-container,
-.dashboard-container {
+.dashboard-container,
+.game-container {
     background-color: white;
     max-width: 700px;
     margin: 0 auto;
@@ -65,7 +66,8 @@ main {
 .actions a,
 .action-button,
 .form-container button,
-.logout-button {
+.logout-button,
+.puzzle-form button {
     display: inline-block;
     padding: 12px 20px;
     background-color: #303846;
@@ -80,7 +82,8 @@ main {
 
 .actions a:hover,
 .action-button:hover,
-.form-container button:hover {
+.form-container button:hover,
+.puzzle-form button:hover {
     background-color: #49566a;
 }
 
@@ -88,17 +91,20 @@ main {
     max-width: 480px;
 }
 
-.form-container form {
+.form-container form,
+.puzzle-form {
     display: flex;
     flex-direction: column;
 }
 
-.form-container label {
+.form-container label,
+.puzzle-form label {
     font-weight: bold;
     margin-bottom: 6px;
 }
 
-.form-container input {
+.form-container input,
+.puzzle-form input {
     width: 100%;
     padding: 11px;
     margin-bottom: 18px;
@@ -107,7 +113,8 @@ main {
     font-size: 16px;
 }
 
-.form-container input:focus {
+.form-container input:focus,
+.puzzle-form input:focus {
     outline: 2px solid #303846;
     outline-offset: 1px;
 }
@@ -188,6 +195,92 @@ main {
     margin: 0;
 }
 
+/* Game room styling. */
+
+.game-container {
+    max-width: 760px;
+}
+
+.game-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.room-progress {
+    font-weight: bold;
+    color: #49566a;
+}
+
+.vault-door {
+    background-color: #e8e8e8;
+    border: 3px solid #555;
+    border-radius: 6px;
+    padding: 25px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.door-icon {
+    font-size: 42px;
+}
+
+.vault-door p {
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+.puzzle-box {
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.puzzle-box h3 {
+    margin-top: 0;
+}
+
+.puzzle-form button {
+    width: 100%;
+}
+
+.attempt-count {
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+.game-note {
+    color: #555;
+    font-size: 14px;
+}
+
+.game-navigation {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.game-navigation a {
+    color: #263b58;
+}
+
+.completion-box {
+    text-align: center;
+    padding: 30px 10px;
+}
+
+.completion-box h2 {
+    font-size: 30px;
+}
+
+.completion-box .action-button {
+    margin-top: 15px;
+}
+
 footer {
     background-color: #303846;
     color: white;
@@ -198,7 +291,8 @@ footer {
 @media (max-width: 600px) {
     .welcome,
     .form-container,
-    .dashboard-container {
+    .dashboard-container,
+    .game-container {
         padding: 18px;
     }
 
@@ -215,5 +309,10 @@ footer {
 
     .player-stats {
         grid-template-columns: 1fr;
+    }
+
+    .game-top {
+        flex-direction: column;
+        gap: 0;
     }
 }

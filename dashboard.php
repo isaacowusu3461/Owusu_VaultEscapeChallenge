@@ -11,6 +11,14 @@ $username = $_SESSION['username'];
 $score = $_SESSION['score'] ?? 1000;
 $room = $_SESSION['room'] ?? 1;
 $completed = $_SESSION['game_completed'] ?? false;
+
+$gameButtonText = 'Start Game';
+
+if ($completed) {
+    $gameButtonText = 'View Results';
+} elseif ($room > 1) {
+    $gameButtonText = 'Continue Game';
+}
 ?>
 
 <!DOCTYPE html>
@@ -67,7 +75,7 @@ $completed = $_SESSION['game_completed'] ?? false;
 
             <div class="dashboard-actions">
                 <a href="game.php" class="action-button">
-                    Start Game
+                    <?= escapeHtml($gameButtonText) ?>
                 </a>
 
                 <a href="leaderboard.php" class="action-button secondary-button">
