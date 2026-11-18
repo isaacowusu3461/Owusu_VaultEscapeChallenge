@@ -94,7 +94,7 @@ function getRoom(int $roomNumber, string $difficulty = 'normal'): ?array
     ];
 }
 
-// Get the difficulty stored for the current room.
+// Return the difficulty saved for the current room.
 function getCurrentRoomDifficulty(): string
 {
     $roomNumber = (int) ($_SESSION['room'] ?? 1);
@@ -104,7 +104,7 @@ function getCurrentRoomDifficulty(): string
     );
 }
 
-// Return the current puzzle using the session difficulty.
+// Return the current puzzle.
 function getCurrentRoom(): ?array
 {
     $roomNumber = (int) ($_SESSION['room'] ?? 1);
@@ -112,7 +112,7 @@ function getCurrentRoom(): ?array
     return getRoom($roomNumber, getCurrentRoomDifficulty());
 }
 
-// Set up game values when they are missing.
+// Set up a game when its session values are missing.
 function initializeGame(): void
 {
     if (!isset($_SESSION['room'])) {
@@ -163,7 +163,7 @@ function initializeGame(): void
         $_SESSION['difficulty_reasons'] = [];
     }
 
-    // Room 1 always starts at Normal difficulty.
+    // Every new game starts at Normal difficulty.
     if (!isset($_SESSION['room_difficulty'][1])) {
         $_SESSION['room_difficulty'][1] = 'normal';
         $_SESSION['difficulty_reasons'][1] =
@@ -187,6 +187,32 @@ function initializeGame(): void
     }
 }
 
+// Reset only the current game, keeping login and leaderboard history.
+function resetGame(): void
+{
+    $gameKeys = [
+        'room',
+        'score',
+        'wrong_attempts',
+        'hints_used',
+        'game_completed',
+        'game_started_at',
+        'game_finished_at',
+        'time_bonus',
+        'room_started_at',
+        'room_durations',
+        'room_difficulty',
+        'difficulty_reasons',
+        'leaderboard_recorded'
+    ];
+
+    foreach ($gameKeys as $key) {
+        unset($_SESSION[$key]);
+    }
+
+    initializeGame();
+}
+
 // Compare answers without case sensitivity or extra spaces.
 function isCorrectAnswer(string $submitted, string $expected): bool
 {
@@ -201,17 +227,16 @@ function recordWrongAnswer(int $roomNumber): void
     }
 
     $_SESSION['wrong_attempts'][$roomNumber]++;
-
     $_SESSION['score'] = max(0, (int) $_SESSION['score'] - 50);
 }
 
-// Check whether the room hint was unlocked.
+// Check whether a room hint was unlocked.
 function hasUsedHint(int $roomNumber): bool
 {
     return !empty($_SESSION['hints_used'][$roomNumber]);
 }
 
-// Unlock a hint and deduct points only once.
+// Unlock a hint and charge only once.
 function requestHint(int $roomNumber): bool
 {
     if (getRoom($roomNumber) === null || hasUsedHint($roomNumber)) {
@@ -236,7 +261,7 @@ function getTotalHintsUsed(): int
     return count(array_filter($_SESSION['hints_used'] ?? []));
 }
 
-// Calculate the total game time.
+// Calculate total game time.
 function getElapsedSeconds(): int
 {
     if (!isset($_SESSION['game_started_at'])) {
@@ -287,7 +312,6 @@ function completeRoom(int $roomNumber): void
         return;
     }
 
-    // Save how long this room took.
     $_SESSION['room_durations'][$roomNumber] =
         getRoomElapsedSeconds($roomNumber);
 
@@ -304,8 +328,6 @@ function completeRoom(int $roomNumber): void
         recordLeaderboardResult();
     } else {
         $nextRoom = $roomNumber + 1;
-
-        // The previous room determines the next difficulty.
         $decision = calculateNextDifficulty($roomNumber);
 
         $_SESSION['room_difficulty'][$nextRoom] =

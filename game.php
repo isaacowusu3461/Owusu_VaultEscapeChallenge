@@ -1,7 +1,7 @@
 
 <?php
 // Main game page for Vault Escape Challenge.
-// The PHP game logic stays the same, but the interface is improved.
+// This page handles answers, hints, timing, and adaptive difficulty.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/game_functions.php';
@@ -35,12 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'hint') {
             $hintUnlocked = requestHint($currentRoom);
 
-            if ($hintUnlocked) {
-                header('Location: game.php?hint=unlocked');
-            } else {
-                header('Location: game.php?hint=already');
-            }
-
+            header(
+                'Location: game.php?hint='
+                . ($hintUnlocked ? 'unlocked' : 'already')
+            );
             exit;
         } elseif ($action === 'answer') {
             $answer = trim((string) ($_POST['answer'] ?? ''));
@@ -104,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 $wrongAttempts = $_SESSION['wrong_attempts'][$currentRoom] ?? 0;
 $hintUsed = !$completed && hasUsedHint($currentRoom);
+
 $totalWrongAttempts = getTotalWrongAttempts();
 $totalHintsUsed = getTotalHintsUsed();
 
@@ -131,7 +130,7 @@ if (!$completed) {
 
 $playerProfile = $completed ? getPlayerProfile() : null;
 
-// The animation appears after the server confirms a correct answer.
+// Only animate after a successful answer redirect.
 $showDoorAnimation = (
     $_SERVER['REQUEST_METHOD'] === 'GET'
     && (
@@ -140,7 +139,6 @@ $showDoorAnimation = (
     )
 );
 
-// Track progress through the three puzzle rooms.
 $roomsSolved = $completed ? 3 : max(0, $currentRoom - 1);
 $progressPercent = (int) (($roomsSolved / 3) * 100);
 ?>
@@ -312,6 +310,27 @@ $progressPercent = (int) (($roomsSolved / 3) * 100);
                         </p>
                     </div>
 
+                    <h3>Want to Try Again?</h3>
+
+                    <p>
+                        Start a new game to improve your score.
+                        Your previous result will remain on the
+                        session leaderboard.
+                    </p>
+
+                    <!-- Restarting requires a POST request and CSRF token. -->
+                    <form method="post" action="restart.php">
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="<?= escapeHtml(getCsrfToken()) ?>"
+                        >
+
+                        <button type="submit" class="action-button">
+                            Play Again
+                        </button>
+                    </form>
+
                     <div class="dashboard-actions">
                         <a href="leaderboard.php" class="action-button">
                             View Leaderboard
@@ -465,6 +484,10 @@ $progressPercent = (int) (($roomsSolved / 3) * 100);
                     Each room hint costs 100 points.
                     A time bonus is added after completing the final room.
                 </p>
+
+                <div class="game-navigation">
+                    <a href="restart.php">Restart Current Game</a>
+                </div>
 
             <?php endif; ?>
 

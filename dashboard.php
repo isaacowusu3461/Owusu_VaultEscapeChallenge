@@ -1,23 +1,28 @@
 
 <?php
-// Player dashboard.
-// Only authenticated players can open this page.
+// Player dashboard for Vault Escape Challenge.
+// This page shows the current game and navigation options.
 
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/game_functions.php';
 
 requireLogin();
+initializeGame();
 
 $username = $_SESSION['username'];
-$score = $_SESSION['score'] ?? 1000;
-$room = $_SESSION['room'] ?? 1;
-$completed = $_SESSION['game_completed'] ?? false;
+$score = (int) $_SESSION['score'];
+$currentRoom = (int) $_SESSION['room'];
+$completed = (bool) $_SESSION['game_completed'];
 
-$gameButtonText = 'Start Game';
+$results = getLeaderboardResults();
+$completedGames = count($results);
 
 if ($completed) {
-    $gameButtonText = 'View Results';
-} elseif ($room > 1) {
+    $gameButtonText = 'View Final Results';
+} elseif ($currentRoom > 1) {
     $gameButtonText = 'Continue Game';
+} else {
+    $gameButtonText = 'Start Game';
 }
 ?>
 
@@ -41,37 +46,45 @@ if ($completed) {
             <h2>Welcome, <?= escapeHtml($username) ?>!</h2>
 
             <p>
-                You are now logged in and ready to enter the vault.
-                Solve three different puzzles to complete the challenge.
+                Solve three puzzle rooms, collect points, and
+                escape the vault as quickly as possible.
             </p>
 
             <div class="player-stats">
                 <div class="stat-box">
                     <h3>Current Score</h3>
-                    <p><?= (int) $score ?> points</p>
+                    <p><?= $score ?></p>
                 </div>
 
                 <div class="stat-box">
-                    <h3>Current Room</h3>
+                    <h3>Game Progress</h3>
                     <p>
-                        <?= $completed ? 'Completed' : 'Room ' . (int) $room ?>
+                        <?= $completed ? 'Completed' : 'Room ' . $currentRoom . ' of 3' ?>
                     </p>
                 </div>
 
                 <div class="stat-box">
-                    <h3>Game Status</h3>
-                    <p><?= $completed ? 'Escaped' : 'Not Completed' ?></p>
+                    <h3>Completed Games</h3>
+                    <p><?= $completedGames ?></p>
                 </div>
             </div>
 
             <h3>Game Rules</h3>
 
             <ul>
-                <li>Complete all three puzzle rooms.</li>
-                <li>Each wrong answer costs 50 points.</li>
-                <li>Each hint costs 100 points.</li>
-                <li>Try to finish with the highest possible score.</li>
+                <li>Start each game with 1,000 points.</li>
+                <li>Each incorrect answer costs 50 points.</li>
+                <li>Each room hint costs 100 points.</li>
+                <li>Complete the vault quickly to earn a time bonus.</li>
+                <li>The next room's difficulty depends on your performance.</li>
             </ul>
+
+            <?php if ($completed): ?>
+                <div class="success-message" role="status">
+                    You escaped the vault! You can view your results
+                    or play again.
+                </div>
+            <?php endif; ?>
 
             <div class="dashboard-actions">
                 <a href="game.php" class="action-button">
@@ -79,7 +92,11 @@ if ($completed) {
                 </a>
 
                 <a href="leaderboard.php" class="action-button secondary-button">
-                    Leaderboard
+                    View Leaderboard
+                </a>
+
+                <a href="restart.php" class="action-button secondary-button">
+                    <?= $completed ? 'Play Again' : 'Restart Game' ?>
                 </a>
 
                 <form method="post" action="logout.php">
@@ -90,10 +107,15 @@ if ($completed) {
                     >
 
                     <button type="submit" class="logout-button">
-                        Logout
+                        Log Out
                     </button>
                 </form>
             </div>
+
+            <p class="game-note">
+                Completed leaderboard results remain available while
+                this login session is active. Logging out clears them.
+            </p>
         </section>
     </main>
 
