@@ -1,3 +1,4 @@
+
 <?php
 // Main game page for Vault Escape Challenge.
 // This page handles answers, hints, timing, and adaptive difficulty.
@@ -300,17 +301,36 @@ $progressPercent = (int) (($roomsSolved / 3) * 100);
                         <h3>Difficulty History</h3>
 
                         <?php for ($room = 1; $room <= 3; $room++): ?>
-                            <p>
-                                <strong>Room <?= $room ?>:</strong>
-                                <?= escapeHtml(ucfirst(
-                                    $_SESSION['room_difficulty'][$room] ?? 'normal'
-                                )) ?>
-                            </p>
+                            <?php
+                            // Show the difficulty and the reason saved
+                            // when the player entered each room.
+                            $savedDifficulty = (string) (
+                                $_SESSION['room_difficulty'][$room] ?? 'normal'
+                            );
+
+                            $savedReason = (string) (
+                                $_SESSION['difficulty_reasons'][$room]
+                                ?? 'The standard puzzle was selected.'
+                            );
+                            ?>
+
+                            <div class="difficulty-history-item">
+                                <p>
+                                    <strong>Room <?= $room ?>:</strong>
+                                    <?= escapeHtml(ucfirst($savedDifficulty)) ?>
+                                </p>
+
+                                <p class="game-note">
+                                    <?= escapeHtml($savedReason) ?>
+                                </p>
+                            </div>
                         <?php endfor; ?>
 
                         <p class="game-note">
-                            Difficulty was selected using mistakes,
-                            hint usage, and time spent in earlier rooms.
+                            The game uses a rule-based system to adjust
+                            difficulty based on mistakes, hint usage,
+                            and time spent in earlier rooms.
+                            It does not use machine learning.
                         </p>
                     </div>
 

@@ -1,3 +1,4 @@
+
 <?php
 // Adaptive gameplay functions.
 // These rules use mistakes, hints, and time to adjust the next room.
@@ -42,31 +43,73 @@ function calculateNextDifficulty(int $completedRoom): array
     ];
 }
 
-// Give feedback based on the player's attempts and time.
+// Give feedback based on the player's attempts and current puzzle.
 function getAdaptiveFeedback(int $roomNumber): string
 {
     $wrong = (int) ($_SESSION['wrong_attempts'][$roomNumber] ?? 0);
     $seconds = getRoomElapsedSeconds($roomNumber);
     $usedHint = !empty($_SESSION['hints_used'][$roomNumber]);
 
-    if ($wrong >= 3) {
-        $messages = [
-            1 => 'Try solving the multiplication and division first. Then combine the results and subtract 5.',
-            2 => 'Convert each number into its alphabet letter, one at a time.',
-            3 => 'Compare each number with the one before it to find the rule.'
-        ];
+    $difficulty = (string) (
+        $_SESSION['room_difficulty'][$roomNumber] ?? 'normal'
+    );
 
-        return $messages[$roomNumber] ?? 'Review the puzzle carefully.';
+    // These messages match the puzzle difficulty being played.
+    $feedback = [
+        1 => [
+            'easy' => [
+                'Check the multiplication before adding.',
+                'Multiply 5 by 4 first, then add 3.'
+            ],
+            'normal' => [
+                'Remember the order of operations.',
+                'Multiply and divide first, then combine the results and subtract 5.'
+            ],
+            'hard' => [
+                'Start with the calculations inside the parentheses.',
+                'Calculate both parentheses, subtract, divide by 4, and finally add 9.'
+            ]
+        ],
+        2 => [
+            'easy' => [
+                'Match each number to its alphabet position.',
+                'The first letter is C. Decode the remaining two numbers.'
+            ],
+            'normal' => [
+                'Write down the alphabet and match each number.',
+                'The first number represents V. Continue decoding the word.'
+            ],
+            'hard' => [
+                'Convert each number into a letter using A = 1.',
+                'The first number represents S. Decode the remaining five letters.'
+            ]
+        ],
+        3 => [
+            'easy' => [
+                'Check the difference between consecutive numbers.',
+                'The numbers increase by 5 each time.'
+            ],
+            'normal' => [
+                'Look for an operation repeated at every step.',
+                'Each number is multiplied by 2.'
+            ],
+            'hard' => [
+                'Look at how the differences change.',
+                'The differences are 4, 6, 8, and 10. Continue that pattern.'
+            ]
+        ]
+    ];
+
+    $roomFeedback = $feedback[$roomNumber][$difficulty] ?? null;
+
+    // Give a more specific clue after three wrong answers.
+    if ($wrong >= 3) {
+        return $roomFeedback[1] ?? 'Review the puzzle carefully.';
     }
 
+    // Give a smaller clue after two wrong answers.
     if ($wrong >= 2) {
-        $messages = [
-            1 => 'Check the order of operations before calculating.',
-            2 => 'Write down the alphabet and match the numbers to letters.',
-            3 => 'Look for a repeated mathematical operation.'
-        ];
-
-        return $messages[$roomNumber] ?? 'Try a different approach.';
+        return $roomFeedback[0] ?? 'Try a different approach.';
     }
 
     if ($seconds >= 120 && !$usedHint) {
