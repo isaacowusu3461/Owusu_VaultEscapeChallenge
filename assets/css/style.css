@@ -8,15 +8,15 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #f2f2f2;
-    color: #222;
+    background-color: #f3f6f8;
+    color: #253442;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
 header {
-    background-color: #303846;
+    background-color: #263e52;
     color: white;
     text-align: center;
     padding: 30px 15px;
@@ -40,8 +40,9 @@ main {
     max-width: 700px;
     margin: 0 auto;
     padding: 25px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    border: 1px solid #d9e3e8;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(38, 62, 82, 0.05);
 }
 
 .welcome h2,
@@ -71,11 +72,11 @@ main {
 .hint-button {
     display: inline-block;
     padding: 12px 20px;
-    background-color: #303846;
+    background-color: #286f70;
     color: white;
     text-decoration: none;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 16px;
     cursor: pointer;
     text-align: center;
@@ -86,7 +87,7 @@ main {
 .form-container button:hover,
 .puzzle-form button:hover,
 .hint-button:hover {
-    background-color: #49566a;
+    background-color: #205b5c;
 }
 
 .form-container {
@@ -110,14 +111,14 @@ main {
     width: 100%;
     padding: 11px;
     margin-bottom: 18px;
-    border: 1px solid #aaa;
+    border: 1px solid #9aadb8;
     border-radius: 4px;
     font-size: 16px;
 }
 
 .form-container input:focus,
 .puzzle-form input:focus {
-    outline: 2px solid #303846;
+    outline: 2px solid #286f70;
     outline-offset: 1px;
 }
 
@@ -133,7 +134,7 @@ main {
 
 .form-link a,
 .game-navigation a {
-    color: #263b58;
+    color: #286f70;
 }
 
 .error-message {
@@ -165,8 +166,8 @@ main {
 }
 
 .stat-box {
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
+    background-color: #f5f8f9;
+    border: 1px solid #d9e3e8;
     border-radius: 4px;
     padding: 15px;
     text-align: center;
@@ -183,15 +184,19 @@ main {
 }
 
 .secondary-button {
-    background-color: #586575;
+    background-color: #536a78;
+}
+
+.secondary-button:hover {
+    background-color: #425865;
 }
 
 .logout-button {
-    background-color: #8a3434;
+    background-color: #a34c4c;
 }
 
 .logout-button:hover {
-    background-color: #a33f3f;
+    background-color: #8d3c3c;
 }
 
 .dashboard-actions form {
@@ -208,21 +213,21 @@ main {
     display: flex;
     justify-content: space-between;
     gap: 15px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #d9e3e8;
     margin-bottom: 20px;
     flex-wrap: wrap;
 }
 
 .room-progress {
     font-weight: bold;
-    color: #49566a;
+    color: #34566b;
 }
 
 .puzzle-box {
-    background-color: #f7f7f7;
-    border: 1px solid #ccc;
+    background-color: #f0f5f6;
+    border: 1px solid #d3e0e4;
     padding: 20px;
-    border-radius: 5px;
+    border-radius: 6px;
     margin: 20px 0;
 }
 
@@ -235,14 +240,14 @@ main {
 }
 
 .game-note {
-    color: #555;
+    color: #52616d;
     font-size: 14px;
 }
 
 .game-navigation {
     margin-top: 25px;
     padding-top: 15px;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid #d9e3e8;
 }
 
 .completion-box {
@@ -263,8 +268,8 @@ main {
 .hint-section {
     margin-top: 30px;
     padding: 20px;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
+    background-color: #f5f8f9;
+    border: 1px solid #d3e0e4;
     border-radius: 5px;
 }
 
@@ -273,11 +278,11 @@ main {
 }
 
 .hint-button {
-    background-color: #66532f;
+    background-color: #8b682d;
 }
 
 .hint-button:hover {
-    background-color: #7b653b;
+    background-color: #755625;
 }
 
 .hint-box {
@@ -294,8 +299,8 @@ main {
 .game-stats {
     margin-top: 25px;
     padding: 15px;
-    background-color: #f7f7f7;
-    border: 1px solid #ddd;
+    background-color: #f7fafb;
+    border: 1px solid #d9e3e8;
     border-radius: 4px;
 }
 
@@ -309,8 +314,8 @@ main {
     max-width: 460px;
     margin: 20px auto;
     padding: 20px;
-    background-color: #f7f7f7;
-    border: 1px solid #ccc;
+    background-color: #f7fafb;
+    border: 1px solid #d3e0e4;
     border-radius: 5px;
     text-align: left;
 }
@@ -328,8 +333,8 @@ main {
 /* Adaptive feedback styling. */
 
 .adaptive-section {
-    background-color: #eef2f6;
-    border: 1px solid #c7d1dd;
+    background-color: #edf5f4;
+    border: 1px solid #c8deda;
     border-radius: 5px;
     padding: 20px;
     margin: 20px 0;
@@ -338,7 +343,7 @@ main {
 
 .adaptive-section h3 {
     margin-top: 0;
-    color: #303846;
+    color: #263e52;
 }
 
 /* Game progress indicator. */
@@ -346,8 +351,8 @@ main {
 .progress-section {
     margin: 25px 0;
     padding: 20px;
-    background-color: #f7f7f7;
-    border: 1px solid #ddd;
+    background-color: #f7fafb;
+    border: 1px solid #d9e3e8;
     border-radius: 6px;
 }
 
@@ -365,12 +370,12 @@ main {
 
 .progress-heading span {
     font-size: 14px;
-    color: #555;
+    color: #52616d;
 }
 
 .progress-track {
     height: 12px;
-    background-color: #d9d9d9;
+    background-color: #dce6e9;
     border-radius: 10px;
     overflow: hidden;
     margin: 18px 0;
@@ -378,7 +383,7 @@ main {
 
 .progress-fill {
     height: 100%;
-    background-color: #55785e;
+    background-color: #347e72;
     border-radius: 10px;
     transition: width 0.5s ease;
 }
@@ -399,7 +404,7 @@ main {
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #666;
+    color: #62727c;
     text-align: center;
 }
 
@@ -407,7 +412,7 @@ main {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background-color: #ddd;
+    background-color: #d9e3e8;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -416,12 +421,12 @@ main {
 }
 
 .step-completed .step-number {
-    background-color: #55785e;
+    background-color: #347e72;
     color: white;
 }
 
 .step-current .step-number {
-    background-color: #303846;
+    background-color: #263e52;
     color: white;
 }
 
@@ -432,8 +437,8 @@ main {
 /* Vault door design. */
 
 .vault-door {
-    background-color: #dce0e4;
-    border: 3px solid #69727b;
+    background-color: #e4ebee;
+    border: 3px solid #667c89;
     border-radius: 8px;
     padding: 25px;
     text-align: center;
@@ -444,13 +449,13 @@ main {
     width: 170px;
     height: 190px;
     background: linear-gradient(135deg, #8b949e, #434d58);
-    border: 8px solid #303846;
+    border: 8px solid #263e52;
     border-radius: 8px;
     margin: 0 auto;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: inset 0 0 15px #222;
+    box-shadow: inset 0 0 15px #253442;
 }
 
 .vault-wheel {
@@ -494,8 +499,8 @@ main {
     text-align: center;
     padding: 25px;
     margin: 20px 0;
-    background-color: #edf5ee;
-    border: 1px solid #8aab90;
+    background-color: #edf7f3;
+    border: 1px solid #a5c8bb;
     border-radius: 6px;
 }
 
@@ -527,7 +532,7 @@ main {
     left: 0;
     top: 0;
     background: linear-gradient(135deg, #9ca5af, #4a5663);
-    border: 3px solid #303846;
+    border: 3px solid #263e52;
     transform-origin: left center;
     animation: openVaultDoor 1.5s ease-in-out forwards;
     display: flex;
@@ -588,7 +593,7 @@ main {
 .performance-section {
     margin-top: 35px;
     padding-top: 25px;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid #d9e3e8;
 }
 
 .performance-section h2 {
@@ -597,7 +602,7 @@ main {
 }
 
 .performance-section > p {
-    color: #555;
+    color: #52616d;
     line-height: 1.6;
 }
 
@@ -609,8 +614,8 @@ main {
 }
 
 .performance-card {
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
+    background-color: #f5f8f9;
+    border: 1px solid #d9e3e8;
     border-radius: 5px;
     padding: 20px;
     text-align: center;
@@ -619,20 +624,20 @@ main {
 .performance-card h3 {
     font-size: 14px;
     font-weight: normal;
-    color: #555;
+    color: #52616d;
     margin: 0 0 12px;
 }
 
 .performance-card p {
     font-size: 25px;
     font-weight: bold;
-    color: #303846;
+    color: #263e52;
     margin: 0;
 }
 
 .empty-performance {
-    background-color: #f7f7f7;
-    border: 1px solid #ddd;
+    background-color: #f7fafb;
+    border: 1px solid #d9e3e8;
     border-radius: 5px;
     padding: 20px;
     margin-top: 20px;
@@ -657,22 +662,22 @@ main {
 .recent-games-table th,
 .recent-games-table td {
     padding: 12px 10px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #d9e3e8;
 }
 
 .recent-games-table th {
-    background-color: #303846;
+    background-color: #263e52;
     color: white;
 }
 
 .recent-games-table tbody tr:nth-child(even) {
-    background-color: #f5f5f5;
+    background-color: #f5f8f9;
 }
 
 /* Footer and responsive layout. */
 
 footer {
-    background-color: #303846;
+    background-color: #263e52;
     color: white;
     text-align: center;
     padding: 15px;
@@ -731,5 +736,32 @@ footer {
     .recent-games-table td {
         padding: 10px 8px;
         font-size: 13px;
+    }
+}
+
+/* Small finishing touches for keyboard use and narrow screens. */
+
+button:focus-visible,
+a:focus-visible {
+    outline: 3px solid #286f70;
+    outline-offset: 3px;
+}
+
+.difficulty-history-item {
+    border-bottom: 1px solid #d9e3e8;
+    padding: 8px 0;
+}
+
+.difficulty-history-item:last-of-type {
+    border-bottom: none;
+}
+
+@media (max-width: 600px) {
+    main {
+        padding: 18px 12px;
+    }
+
+    header {
+        padding: 24px 12px;
     }
 }
