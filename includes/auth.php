@@ -1,23 +1,18 @@
 
 <?php
 // Shared authentication and security functions.
-// These helpers are used by the login, game, and dashboard pages.
 
-// Start a secure PHP session.
 function startGameSession(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
 
-    // Set session options before starting the session.
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
     ini_set('session.cookie_httponly', '1');
     ini_set('session.cookie_samesite', 'Lax');
 
-    // HTTPS cookies are secure on the deployed site.
-    // Local HTTP development can still work.
     $secure = !empty($_SERVER['HTTPS'])
         && $_SERVER['HTTPS'] !== 'off';
 
@@ -32,7 +27,7 @@ function startGameSession(): void
     session_start();
 }
 
-// Add security headers to pages that use authentication.
+// Send browser security headers before page output.
 function sendSecurityHeaders(): void
 {
     if (headers_sent()) {
@@ -44,8 +39,7 @@ function sendSecurityHeaders(): void
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Cache-Control: no-store, private');
 
-    // The project uses local CSS and no JavaScript.
-    // Inline styles are currently used for the progress bar.
+    // The progress bar currently uses an inline width style.
     header(
         "Content-Security-Policy: "
         . "default-src 'self'; "
@@ -59,7 +53,6 @@ function sendSecurityHeaders(): void
     );
 }
 
-// Check whether the current session belongs to a logged-in player.
 function isLoggedIn(): bool
 {
     return isset($_SESSION['username'])
@@ -67,7 +60,6 @@ function isLoggedIn(): bool
         && $_SESSION['username'] !== '';
 }
 
-// Protect pages that require login.
 function requireLogin(): void
 {
     startGameSession();
@@ -79,7 +71,7 @@ function requireLogin(): void
     }
 }
 
-// Generate a CSRF token for forms.
+// Create a token for forms that change data.
 function getCsrfToken(): string
 {
     startGameSession();
@@ -95,7 +87,6 @@ function getCsrfToken(): string
     return $_SESSION['csrf_token'];
 }
 
-// Check whether a submitted CSRF token is valid.
 function validCsrfToken(string $token): bool
 {
     startGameSession();
@@ -112,7 +103,6 @@ function validCsrfToken(string $token): bool
     return hash_equals($_SESSION['csrf_token'], $token);
 }
 
-// Escape text before displaying it in HTML.
 function escapeHtml(string $value): string
 {
     return htmlspecialchars(
@@ -122,24 +112,29 @@ function escapeHtml(string $value): string
     );
 }
 
-// Safely read a string from submitted form data.
-// Arrays and other unexpected values are rejected.
-function getPostString(string $key, int $maxLength = 200): ?string
+// Read a form value without changing its contents.
+// This is important for passwords, where spaces may be intentional.
+function getPostRawString(string $key, int $maxLength = 200): ?string
 {
     if (!isset($_POST[$key]) || !is_string($_POST[$key])) {
         return null;
     }
 
-    $value = trim($_POST[$key]);
-
-    if (strlen($value) > $maxLength) {
+    if (strlen($_POST[$key]) > $maxLength) {
         return null;
     }
 
-    return $value;
+    return $_POST[$key];
 }
 
-// Check whether the request uses the expected HTTP method.
+// Trim ordinary form values such as usernames and answers.
+function getPostString(string $key, int $maxLength = 200): ?string
+{
+    $value = getPostRawString($key, $maxLength);
+
+    return $value === null ? null : trim($value);
+}
+
 function isPostRequest(): bool
 {
     return ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';

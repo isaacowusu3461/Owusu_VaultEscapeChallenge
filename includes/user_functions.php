@@ -1,10 +1,9 @@
 
 <?php
 // Helper functions for user registration.
-// Keeping these functions separate makes the registration page easier to read.
+// User accounts are stored in a JSON file.
 
-// The user file is stored outside the public project folder when possible.
-// Set VAULT_DATA_DIR on CODD to a private writable directory.
+// Use a private directory when VAULT_DATA_DIR is configured.
 function userFilePath(): string
 {
     $directory = getenv('VAULT_DATA_DIR');
@@ -16,7 +15,17 @@ function userFilePath(): string
     return rtrim($directory, '/') . '/users.json';
 }
 
-// Load registered users from the JSON file.
+// Check that a decoded user record has the expected fields.
+function isValidUserRecord(mixed $user): bool
+{
+    return is_array($user)
+        && isset($user['username'], $user['email'], $user['password'])
+        && is_string($user['username'])
+        && is_string($user['email'])
+        && is_string($user['password']);
+}
+
+// Read registered users from the JSON file.
 function loadUsers(): array
 {
     $file = userFilePath();
@@ -33,14 +42,20 @@ function loadUsers(): array
 
     $users = json_decode($contents, true);
 
-    if (!is_array($users)) {
+    if (!is_array($users) || !array_is_list($users)) {
         throw new RuntimeException('The user file is not valid.');
+    }
+
+    foreach ($users as $user) {
+        if (!isValidUserRecord($user)) {
+            throw new RuntimeException('Invalid user record.');
+        }
     }
 
     return $users;
 }
 
-// Validate the form before saving a new account.
+// Validate the form before saving an account.
 function validateRegistration(
     string $username,
     string $email,
@@ -50,10 +65,14 @@ function validateRegistration(
     $errors = [];
 
     if (!preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
-        $errors[] = 'Username must be 3 to 20 characters and contain only letters, numbers, or underscores.';
+        $errors[] =
+            'Username must be 3 to 20 characters and contain only letters, numbers, or underscores.';
     }
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 254) {
+    if (
+        !filter_var($email, FILTER_VALIDATE_EMAIL)
+        || strlen($email) > 254
+    ) {
         $errors[] = 'Please enter a valid email address.';
     }
 
@@ -68,12 +87,27 @@ function validateRegistration(
     return $errors;
 }
 
-// Save an account while locking the file to avoid conflicting writes.
+// Save an account while holding an exclusive file lock.
 function registerUser(
     string $username,
     string $email,
     string $password
 ): array {
+    // Validate again so this function is safe when called directly.
+    $errors = validateRegistration(
+        $username,
+        $email,
+        $password,
+        $password
+    );
+
+    if (!empty($errors)) {
+        return [
+            'success' => false,
+            'message' => $errors[0]
+        ];
+    }
+
     $file = userFilePath();
     $directory = dirname($file);
 
@@ -106,18 +140,30 @@ function registerUser(
         if (trim($contents) !== '') {
             $users = json_decode($contents, true);
 
-            if (!is_array($users)) {
+            if (!is_array($users) || !array_is_list($users)) {
                 throw new RuntimeException('Invalid user data.');
+            }
+
+            foreach ($users as $user) {
+                if (!isValidUserRecord($user)) {
+                    throw new RuntimeException('Invalid user record.');
+                }
             }
         }
 
         foreach ($users as $user) {
             if (strcasecmp($user['username'], $username) === 0) {
-                return ['success' => false, 'message' => 'Username is already taken.'];
+                return [
+                    'success' => false,
+                    'message' => 'Username is already taken.'
+                ];
             }
 
             if (strcasecmp($user['email'], $email) === 0) {
-                return ['success' => false, 'message' => 'Email is already registered.'];
+                return [
+                    'success' => false,
+                    'message' => 'Email is already registered.'
+                ];
             }
         }
 
@@ -127,7 +173,10 @@ function registerUser(
             'password' => password_hash($password, PASSWORD_DEFAULT)
         ];
 
-        $json = json_encode($users, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+        $json = json_encode(
+            $users,
+            JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR
+        );
 
         rewind($handle);
 
@@ -135,15 +184,28 @@ function registerUser(
             throw new RuntimeException('Unable to update the user file.');
         }
 
-        $written = fwrite($handle, $json);
+        // fwrite can write fewer bytes than requested.
+        $offset = 0;
+        $length = strlen($json);
 
-        if ($written === false || $written !== strlen($json)) {
-            throw new RuntimeException('Unable to save the account.');
+        while ($offset < $length) {
+            $written = fwrite($handle, substr($json, $offset));
+
+            if ($written === false || $written === 0) {
+                throw new RuntimeException('Unable to save the account.');
+            }
+
+            $offset += $written;
         }
 
-        fflush($handle);
+        if (!fflush($handle)) {
+            throw new RuntimeException('Unable to finish saving the account.');
+        }
 
-        return ['success' => true, 'message' => 'Account created successfully.'];
+        return [
+            'success' => true,
+            'message' => 'Account created successfully.'
+        ];
     } finally {
         flock($handle, LOCK_UN);
         fclose($handle);

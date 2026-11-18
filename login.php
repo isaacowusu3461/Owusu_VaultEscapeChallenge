@@ -1,14 +1,15 @@
 
 <?php
 // Login page for Vault Escape Challenge.
-// The password is checked against the stored hash.
+// Passwords are checked against their stored hashes.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/user_functions.php';
+require_once __DIR__ . '/includes/game_functions.php';
 
 startGameSession();
+sendSecurityHeaders();
 
-// A logged-in player should go straight to the dashboard.
 if (isLoggedIn()) {
     header('Location: dashboard.php');
     exit;
@@ -17,24 +18,33 @@ if (isLoggedIn()) {
 $username = '';
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim((string) ($_POST['username'] ?? ''));
-    $password = (string) ($_POST['password'] ?? '');
-    $token = (string) ($_POST['csrf_token'] ?? '');
+if (isPostRequest()) {
+    $token = getPostString('csrf_token', 64);
+    $submittedUsername = getPostString('username', 20);
+    $password = getPostRawString('password', 128);
 
-    if (!validCsrfToken($token)) {
+    if ($token === null || !validCsrfToken($token)) {
         $error = 'The form has expired. Please try again.';
-    } elseif ($username === '' || $password === '') {
+    } elseif (
+        $submittedUsername === null
+        || $password === null
+    ) {
+        $error = 'Invalid form data. Please try again.';
+    } elseif ($submittedUsername === '' || $password === '') {
         $error = 'Please enter your username and password.';
     } else {
+        $username = $submittedUsername;
+
         try {
             $users = loadUsers();
             $matchedUser = null;
 
-            // Find the registered account.
             foreach ($users as $user) {
                 if (
-                    isset($user['username'], $user['password'])
+                    is_array($user)
+                    && isset($user['username'], $user['password'])
+                    && is_string($user['username'])
+                    && is_string($user['password'])
                     && strcasecmp($user['username'], $username) === 0
                 ) {
                     $matchedUser = $user;
@@ -46,24 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $matchedUser !== null
                 && password_verify($password, $matchedUser['password'])
             ) {
-                // Create a new session ID after successful login.
                 session_regenerate_id(true);
 
+                // Clear old login data before starting a new game.
+                $_SESSION = [];
                 $_SESSION['username'] = $matchedUser['username'];
                 $_SESSION['login_time'] = time();
 
-                // Start each new login with a fresh game.
-                $_SESSION['room'] = 1;
-                $_SESSION['score'] = 1000;
-                $_SESSION['wrong_attempts'] = [];
-                $_SESSION['hints_used'] = [];
-                $_SESSION['game_completed'] = false;
+                initializeGame();
 
                 header('Location: dashboard.php');
                 exit;
             }
 
-            // Use one message for both unknown users and wrong passwords.
             $error = 'Invalid username or password.';
         } catch (RuntimeException $exception) {
             error_log($exception->getMessage());
@@ -122,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     id="password"
                     name="password"
                     autocomplete="current-password"
+                    maxlength="128"
                     required
                 >
 

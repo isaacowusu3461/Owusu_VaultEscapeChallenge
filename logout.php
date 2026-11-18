@@ -1,25 +1,30 @@
 
 <?php
-// Logout handler.
-// Clear the current session and return to the login page.
+// Logout handler for Vault Escape Challenge.
+// A valid POST request is required to end the session.
 
 require_once __DIR__ . '/includes/auth.php';
 
 startGameSession();
+sendSecurityHeaders();
 
-// Logout should only happen through a valid POST request.
-if (
-    $_SERVER['REQUEST_METHOD'] !== 'POST'
-    || !validCsrfToken((string) ($_POST['csrf_token'] ?? ''))
-) {
+if (!isPostRequest()) {
+    http_response_code(405);
+    header('Allow: POST');
+    exit('Request method not allowed.');
+}
+
+$token = getPostString('csrf_token', 64);
+
+if ($token === null || !validCsrfToken($token)) {
     http_response_code(403);
     exit('Invalid logout request.');
 }
 
-// Remove all stored session values.
+// Remove all game and authentication data.
 $_SESSION = [];
 
-// Delete the session cookie from the browser.
+// Expire the browser's session cookie.
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();
 
@@ -33,7 +38,6 @@ if (ini_get('session.use_cookies')) {
     ]);
 }
 
-// Destroy the server-side session.
 session_destroy();
 
 header('Location: login.php');

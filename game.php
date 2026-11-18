@@ -13,16 +13,19 @@ $username = $_SESSION['username'];
 $message = '';
 $messageType = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = (string) ($_POST['csrf_token'] ?? '');
-    $action = (string) ($_POST['action'] ?? '');
+if (isPostRequest()) {
+    $token = getPostString('csrf_token', 64);
+    $action = getPostString('action', 20);
 
-    if (!validCsrfToken($token)) {
+    if ($token === null || !validCsrfToken($token)) {
         $message = 'The form has expired. Please try again.';
         $messageType = 'error';
-    } elseif ($_SESSION['game_completed']) {
+    } elseif (!empty($_SESSION['game_completed'])) {
         $message = 'You have already completed the game.';
         $messageType = 'success';
+    } elseif ($action === null) {
+        $message = 'Invalid game action.';
+        $messageType = 'error';
     } else {
         $currentRoom = (int) $_SESSION['room'];
         $roomData = getCurrentRoom();
@@ -41,13 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             exit;
         } elseif ($action === 'answer') {
-            $answer = trim((string) ($_POST['answer'] ?? ''));
+            $answer = getPostString('answer', 100);
 
-            if ($answer === '') {
-                $message = 'Please enter an answer before submitting.';
+            if ($answer === null) {
+                $message = 'Invalid answer. Please enter a shorter answer.';
                 $messageType = 'error';
-            } elseif (strlen($answer) > 100) {
-                $message = 'Your answer is too long.';
+            } elseif ($answer === '') {
+                $message = 'Please enter an answer before submitting.';
                 $messageType = 'error';
             } elseif (isCorrectAnswer($answer, $roomData['answer'])) {
                 completeRoom($currentRoom);
@@ -62,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 recordWrongAnswer($currentRoom);
 
-                $message = 'Incorrect answer. You lost 50 points. Review the adaptive feedback below.';
+                $message =
+                    'Incorrect answer. You lost 50 points. Review the adaptive feedback below.';
                 $messageType = 'error';
             }
         } else {
@@ -93,7 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($_GET['hint'] === 'unlocked') {
             $message = 'Hint unlocked. 100 points were deducted.';
         } else {
-            $message = 'This hint is already unlocked. No additional points were deducted.';
+            $message =
+                'This hint is already unlocked. No additional points were deducted.';
         }
 
         $messageType = 'success';
@@ -130,11 +135,11 @@ if (!$completed) {
 
 $playerProfile = $completed ? getPlayerProfile() : null;
 
-// Only animate after a successful answer redirect.
+// Animate only after a successful room completion.
 $showDoorAnimation = (
     $_SERVER['REQUEST_METHOD'] === 'GET'
     && (
-        isset($_GET['unlocked'])
+        (isset($_GET['unlocked']) && !$completed)
         || (isset($_GET['finished']) && $completed)
     )
 );
@@ -318,7 +323,6 @@ $progressPercent = (int) (($roomsSolved / 3) * 100);
                         session leaderboard.
                     </p>
 
-                    <!-- Restarting requires a POST request and CSRF token. -->
                     <form method="post" action="restart.php">
                         <input
                             type="hidden"

@@ -1,52 +1,70 @@
 
 <?php
 // Registration page for Vault Escape Challenge.
-// All validation is done in PHP before an account is saved.
+// Validate form data in PHP before saving an account.
 
-session_start();
-
+require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/user_functions.php';
+
+startGameSession();
+sendSecurityHeaders();
 
 $username = '';
 $email = '';
 $errors = [];
 $successMessage = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim((string) ($_POST['username'] ?? ''));
-    $email = trim((string) ($_POST['email'] ?? ''));
-    $password = (string) ($_POST['password'] ?? '');
-    $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+if (isPostRequest()) {
+    $token = getPostString('csrf_token', 64);
+    $submittedUsername = getPostString('username', 20);
+    $submittedEmail = getPostString('email', 254);
 
-    $errors = validateRegistration(
-        $username,
-        $email,
-        $password,
-        $confirmPassword
-    );
+    // Do not trim passwords because spaces may be intentional.
+    $password = getPostRawString('password', 128);
+    $confirmPassword = getPostRawString('confirm_password', 128);
 
-    if (empty($errors)) {
-        try {
-            $result = registerUser($username, $email, $password);
+    if ($token === null || !validCsrfToken($token)) {
+        $errors[] = 'The form has expired. Please try again.';
+    } elseif (
+        $submittedUsername === null
+        || $submittedEmail === null
+        || $password === null
+        || $confirmPassword === null
+    ) {
+        $errors[] = 'Invalid form data. Please check your entries.';
+    } else {
+        $username = $submittedUsername;
+        $email = $submittedEmail;
 
-            if ($result['success']) {
-                $successMessage = $result['message'];
-                $username = '';
-                $email = '';
-            } else {
-                $errors[] = $result['message'];
+        $errors = validateRegistration(
+            $username,
+            $email,
+            $password,
+            $confirmPassword
+        );
+
+        if (empty($errors)) {
+            try {
+                $result = registerUser($username, $email, $password);
+
+                if ($result['success']) {
+                    $successMessage = $result['message'];
+                    $username = '';
+                    $email = '';
+
+                    // Use a fresh token after registration.
+                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                } else {
+                    $errors[] = $result['message'];
+                }
+            } catch (RuntimeException $exception) {
+                error_log($exception->getMessage());
+
+                $errors[] =
+                    'Registration is temporarily unavailable. Please try again.';
             }
-        } catch (RuntimeException $exception) {
-            error_log($exception->getMessage());
-            $errors[] = 'Registration is temporarily unavailable. Please try again.';
         }
     }
-}
-
-// Escape text before displaying it in HTML.
-function escapeText(string $value): string
-{
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 ?>
 
@@ -75,7 +93,7 @@ function escapeText(string $value): string
 
                     <ul>
                         <?php foreach ($errors as $error): ?>
-                            <li><?= escapeText($error) ?></li>
+                            <li><?= escapeHtml($error) ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -83,7 +101,7 @@ function escapeText(string $value): string
 
             <?php if ($successMessage !== ''): ?>
                 <div class="success-message" role="status">
-                    <p><?= escapeText($successMessage) ?></p>
+                    <p><?= escapeHtml($successMessage) ?></p>
                     <p>
                         <a href="login.php">Continue to Login</a>
                     </p>
@@ -91,12 +109,18 @@ function escapeText(string $value): string
             <?php else: ?>
 
                 <form method="post" action="register.php">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="<?= escapeHtml(getCsrfToken()) ?>"
+                    >
+
                     <label for="username">Username</label>
                     <input
                         type="text"
                         id="username"
                         name="username"
-                        value="<?= escapeText($username) ?>"
+                        value="<?= escapeHtml($username) ?>"
                         minlength="3"
                         maxlength="20"
                         autocomplete="username"
@@ -108,7 +132,8 @@ function escapeText(string $value): string
                         type="email"
                         id="email"
                         name="email"
-                        value="<?= escapeText($email) ?>"
+                        value="<?= escapeHtml($email) ?>"
+                        maxlength="254"
                         autocomplete="email"
                         required
                     >
@@ -129,6 +154,8 @@ function escapeText(string $value): string
                         type="password"
                         id="confirm_password"
                         name="confirm_password"
+                        minlength="8"
+                        maxlength="128"
                         autocomplete="new-password"
                         required
                     >
