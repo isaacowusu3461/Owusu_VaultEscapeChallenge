@@ -1,0 +1,40 @@
+
+name: PHP Automated Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  php-tests:
+    name: PHP Syntax and Application Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # Get the latest project files from GitHub.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Use PHP 8.3 for testing the project.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # Check all PHP files for syntax errors.
+      - name: Check PHP syntax
+        run: |
+          find . -type f -name "*.php" -not -path "./vendor/*" -print0 |
+          while IFS= read -r -d '' file; do
+            php -l "$file" || exit 1
+          done
+
+      # Test registration, scoring, puzzles, and statistics.
+      - name: Run application tests
+        run: php tests/application_test.php
+
+      # Test CSRF protection, escaping, and input validation.
+      - name: Run security tests
+        run: php tests/security_test.php
