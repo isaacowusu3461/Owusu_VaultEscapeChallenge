@@ -1,4 +1,3 @@
-
 <?php
 // Leaderboard helpers for Vault Escape Challenge.
 // Results are stored in the current PHP session, not in a database.

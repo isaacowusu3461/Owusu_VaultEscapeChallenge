@@ -1,4 +1,3 @@
-
 <?php
 // Basic security tests for Vault Escape Challenge.
 // Run this file from the command line using PHP.

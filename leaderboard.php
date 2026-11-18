@@ -1,4 +1,3 @@
-
 <?php
 // Session-based leaderboard for Vault Escape Challenge.
 // Players must be logged in to view the results.

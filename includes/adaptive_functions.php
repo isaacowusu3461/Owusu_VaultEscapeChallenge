@@ -1,4 +1,3 @@
-
 <?php
 // Adaptive gameplay functions.
 // These rules use mistakes, hints, and time to adjust the next room.

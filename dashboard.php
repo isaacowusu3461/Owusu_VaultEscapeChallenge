@@ -1,4 +1,3 @@
-
 <?php
 // Player dashboard for Vault Escape Challenge.
 // This page shows the current game and completed-game statistics.

@@ -1,4 +1,3 @@
-
 <?php
 // Vault Escape Challenge homepage.
 // CSC 6370 - Web Programming

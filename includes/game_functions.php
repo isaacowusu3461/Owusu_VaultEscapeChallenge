@@ -1,4 +1,3 @@
-
 <?php
 // Game functions for Vault Escape Challenge.
 // Sessions store progress, scoring, timing, and difficulty.

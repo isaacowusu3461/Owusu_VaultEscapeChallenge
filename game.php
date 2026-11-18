@@ -1,4 +1,3 @@
-
 <?php
 // Main game page for Vault Escape Challenge.
 // This page handles answers, hints, timing, and adaptive difficulty.

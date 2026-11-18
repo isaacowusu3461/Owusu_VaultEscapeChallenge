@@ -1,4 +1,3 @@
-
 <?php
 // Statistics helpers for Vault Escape Challenge.
 // These functions use completed games stored in the session.

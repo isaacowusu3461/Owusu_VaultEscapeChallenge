@@ -1,4 +1,3 @@
-
 <?php
 // Helper functions for user registration.
 // User accounts are stored in a JSON file.

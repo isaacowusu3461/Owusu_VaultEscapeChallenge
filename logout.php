@@ -1,4 +1,3 @@
-
 <?php
 // Logout handler for Vault Escape Challenge.
 // A valid POST request is required to end the session.

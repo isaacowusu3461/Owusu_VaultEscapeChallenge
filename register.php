@@ -1,4 +1,3 @@
-
 <?php
 // Registration page for Vault Escape Challenge.
 // Validate form data in PHP before saving an account.

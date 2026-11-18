@@ -1,4 +1,3 @@
-
 <?php
 // Restart a game without logging out.
 // Only a valid POST request can reset the current game.

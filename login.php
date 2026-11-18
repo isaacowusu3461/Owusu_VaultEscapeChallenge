@@ -1,4 +1,3 @@
-
 <?php
 // Login page for Vault Escape Challenge.
 // Passwords are checked against their stored hashes.
