@@ -1,7 +1,7 @@
 
 <?php
 // Restart a game without logging out.
-// Completed leaderboard results are kept in the session.
+// Only a valid POST request can reset the current game.
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/game_functions.php';
@@ -11,16 +11,26 @@ initializeGame();
 
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = (string) ($_POST['csrf_token'] ?? '');
+// Reject unsupported HTTP methods.
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-    if (!validCsrfToken($token)) {
+if (!in_array($method, ['GET', 'POST'], true)) {
+    http_response_code(405);
+    header('Allow: GET, POST');
+    exit('Request method not allowed.');
+}
+
+if (isPostRequest()) {
+    $token = getPostString('csrf_token', 64);
+
+    if ($token === null || !validCsrfToken($token)) {
         http_response_code(403);
         $error = 'The restart request could not be verified.';
     } else {
+        // Keep login details and completed leaderboard results.
         resetGame();
 
-        // Redirect so refreshing the page does not restart again.
+        // Redirect to prevent duplicate restarts on refresh.
         header('Location: game.php');
         exit;
     }
@@ -56,8 +66,8 @@ $completed = !empty($_SESSION['game_completed']);
 
             <?php if ($completed): ?>
                 <p>
-                    You have completed the vault. You can start a new
-                    game and try to improve your score.
+                    You have completed the vault. You can start
+                    a new game and try to improve your score.
                 </p>
             <?php else: ?>
                 <p>
@@ -85,7 +95,9 @@ $completed = !empty($_SESSION['game_completed']);
             </form>
 
             <div class="game-navigation">
-                <a href="dashboard.php">Cancel and Return to Dashboard</a>
+                <a href="dashboard.php">
+                    Cancel and Return to Dashboard
+                </a>
             </div>
         </section>
     </main>
